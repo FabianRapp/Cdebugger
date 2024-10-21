@@ -1,7 +1,7 @@
 CC := cc
 
 INCLUDES := -I./includes
-CFLAGS := -g $(INCLUDES)
+CFLAGS := -Wall -Wextra -g $(INCLUDES)
 
 OBJS_DIR := ./objs/
 

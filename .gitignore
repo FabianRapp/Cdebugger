@@ -1,0 +1,7 @@
+dummy
+debugger
+*.o
+*.a
+objs/*
+.cache
+compile_commands.json
