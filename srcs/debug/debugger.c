@@ -1,14 +1,5 @@
 #include <debugger.h>
 
-typedef struct s_debugger {
-	size_t	page_size;
-}	t_debugger;
-
-typedef	struct s_instruction {
-	unsigned char	buffer[15];
-	size_t			len;
-}	t_instruction;
-
 uint8_t	*replaced_program_location;
 uint8_t	replaced_program_byte;
 
@@ -22,40 +13,35 @@ uint8_t	insert_breakpoint_here(uint8_t *program) {
 	return (old);
 }
 
-void	int3_sig_handler(int sig, siginfo_t *info, void *context_void) {
+void	breakpoint_init_print(void) {
+	char	*options[] = {"continue", "REGS", "n/next"};
 	printf("Breakpoint reached:\n");
-	ucontext_t	*context = (ucontext_t *)context_void;
-	long long int	*pc = context->uc_mcontext.gregs + REG_RIP;
-	
-	char	*line;
-
-	line = readline("debugger: ");
-	while (line) {
-		free(line);
-		line = readline("debugger: ");
+	printf("Options:\n");
+	for (size_t i = 0; i < sizeof options / sizeof options[0]; i++) {
+		printf("\t%s\n", options[i]);
 	}
-	(void)sig;
-	(void)info;
-	*replaced_program_location = replaced_program_byte;
-	*pc -= 1;
+	printf("Cntr+d is undefined behaivior\n");
 }
 
-void	setup_signals(t_debugger *debugger) {
+void	setup_sigtrap(void) {
 	struct sigaction	sigact = {0};
 
 	sigact.sa_sigaction = &int3_sig_handler;
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = SA_SIGINFO;
 	assert(sigaction(SIGTRAP, &sigact, NULL) != -1);
-	(void)debugger;
 }
 
-t_debugger	init(void) {
+t_debugger	init(int ac, char **av, char **env) {
+
 	t_debugger	debugger;
 
 	test_op_len();
+	assert("need 1 argument: executable" && ac > 1);
 	debugger.page_size = sysconf(_SC_PAGESIZE);
-	setup_signals(&debugger);
+	breakpoint_init_print();
+	setup_sigtrap();
+	fork_process(&debugger, av, env);
 	return (debugger);
 }
 
@@ -69,11 +55,9 @@ int	(*alloc_dummy_fn(t_debugger debugger))(void) {
 	return ((int (*)(void))buf);
 }
 
+int main(int ac, char *av[], char *env[]) {
+	t_debugger	debugger = init(ac, av, env);
 
-
-
-int main() {
-	t_debugger	debugger = init();
 	int	(*fn)(void);
 	int	result;
 

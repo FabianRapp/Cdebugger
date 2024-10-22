@@ -9,7 +9,12 @@ LIBS := -L./capstone/lib -lcapstone
 OBJS_DIR := ./objs/
 
 SRCS := srcs/debug/debugger.c \
-		srcs/debug/op_len.c
+		srcs/debug/op_len.c \
+		srcs/debug/forking.c \
+		srcs/debug/breakpoint_handler.c \
+
+
+
 OBJS := $(SRCS:srcs/%.c=$(OBJS_DIR)%.o)
 NAME := debugger
 
