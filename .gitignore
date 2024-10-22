@@ -5,3 +5,7 @@ debugger
 objs/*
 .cache
 compile_commands.json
+lib
+include/*
+bin/*
+capstone/*

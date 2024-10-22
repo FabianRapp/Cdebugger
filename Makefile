@@ -1,24 +1,28 @@
 CC := cc
 
-INCLUDES := -I./includes
-CFLAGS := -Wall -Wextra -g $(INCLUDES)
+INCLUDES := -I./includes -I./capstone/include/
+
+CFLAGS := -Wall -Wextra -g -fsanitize=address $(INCLUDES)
+
+LIBS := -L./capstone/lib -lcapstone
 
 OBJS_DIR := ./objs/
 
-SRCS := srcs/debugger/debugger.c
+SRCS := srcs/debug/debugger.c \
+		srcs/debug/op_len.c
 OBJS := $(SRCS:srcs/%.c=$(OBJS_DIR)%.o)
 NAME := debugger
 
-SRCS_PROGRAMM := srcs/dummy/dummy.c
+SRCS_PROGRAMM := srcs/programm/dummy.c
 OBJS_PROGRAMM := $(SRCS_PROGRAMM:srcs/%.c=$(OBJS_DIR)%.o)
 NAME_PROGRAMM := dummy
 
-.PHONY: all debugger dummy clean fclean re
+.PHONY: all clean fclean re
 
 all: debugger dummy
 
 debugger: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
+	$(CC) -o $(NAME) $(OBJS) $(LIBS) $(CFLAGS)
 
 dummy: $(OBJS_PROGRAMM)
 	$(CC) $(CFLAGS) $(OBJS_PROGRAMM) -o $(NAME_PROGRAMM)
