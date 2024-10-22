@@ -1,13 +1,24 @@
 #ifndef DEBUGGER_H
 # define DEBUGGER_H
 
+//******************BELOW ORDER MATTERS*******************
 # include <stdio.h>
+#define __USE_GNU
+//******************ABOVE ORDER MATTERS*******************
+# include <signal.h>
+# include <sys/ucontext.h>
+
+# include <ucontext.h>
 # include <assert.h>
 # include <errno.h>
 # include <stdlib.h>
 # include <string.h>
 # include <sys/ptrace.h>
 # include <stdint.h>
+# include <unistd.h>
+# include <sys/mman.h>
+# include <readline/readline.h>
+# include <readline/history.h>
 
 # include <capstone/capstone.h>
 
@@ -15,6 +26,9 @@
 # define NOP_OPCODE 0x90
 # endif //NOP_OPCODE
 
+# ifndef INT3_OPCODE
+# define INT3_OPCODE 0xcc
+# endif //INT3_OPCODE
 
 # ifndef BASIC_BREAK
 //oppcode 0xcc : one bye instruction thus suitable as a patching instruction

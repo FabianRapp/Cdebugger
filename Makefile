@@ -2,7 +2,7 @@ CC := cc
 
 INCLUDES := -I./includes -I./capstone/include/
 
-CFLAGS := -Wall -Wextra -g -fsanitize=address $(INCLUDES)
+CFLAGS := -Wall -Wextra -O0 -g -fsanitize=address $(INCLUDES) -lreadline 
 
 LIBS := -L./capstone/lib -lcapstone
 

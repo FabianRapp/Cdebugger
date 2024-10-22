@@ -1,56 +1,90 @@
 #include <debugger.h>
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <capstone/capstone.h>
+typedef struct s_debugger {
+	size_t	page_size;
+}	t_debugger;
 
 typedef	struct s_instruction {
 	unsigned char	buffer[15];
 	size_t			len;
 }	t_instruction;
 
-int main() {
-	// Machine code for: mov eax, 1; ret
-	//						|int3	|mov eax, 1						|ret	|int3	|noop
-	unsigned char code[] = {0xcc,	0xB8, 0x01, 0x00, 0x00, 0x00,	0xC3,	0xcc,	NOP_OPCODE};
+uint8_t	*replaced_program_location;
+uint8_t	replaced_program_byte;
+
+// return the removed instruction byte
+uint8_t	insert_breakpoint_here(uint8_t *program) {
+	uint8_t		old;
+
+	replaced_program_location = program;
+	old = program[0];
+	program[0] = INT3_OPCODE;
+	return (old);
+}
+
+void	int3_sig_handler(int sig, siginfo_t *info, void *context_void) {
+	printf("Breakpoint reached:\n");
+	ucontext_t	*context = (ucontext_t *)context_void;
+	long long int	*pc = context->uc_mcontext.gregs + REG_RIP;
+	
+	char	*line;
+
+	line = readline("debugger: ");
+	while (line) {
+		free(line);
+		line = readline("debugger: ");
+	}
+	(void)sig;
+	(void)info;
+	*replaced_program_location = replaced_program_byte;
+	*pc -= 1;
+}
+
+void	setup_signals(t_debugger *debugger) {
+	struct sigaction	sigact = {0};
+
+	sigact.sa_sigaction = &int3_sig_handler;
+	sigemptyset(&sigact.sa_mask);
+	sigact.sa_flags = SA_SIGINFO;
+	assert(sigaction(SIGTRAP, &sigact, NULL) != -1);
+	(void)debugger;
+}
+
+t_debugger	init(void) {
+	t_debugger	debugger;
+
+	test_op_len();
+	debugger.page_size = sysconf(_SC_PAGESIZE);
+	setup_signals(&debugger);
+	return (debugger);
+}
+
+int	(*alloc_dummy_fn(t_debugger debugger))(void) {
+	//						|mov eax, 1						|noop		|ret
+	unsigned char code[] = {0xB8, 0x01, 0x00, 0x00, 0x00,	NOP_OPCODE, 0xC3};
 	void *buf;
-
-	test_op_len();
-
-	// Allocate a memory page that is both executable and writable
-	size_t pagesize = sysconf(_SC_PAGESIZE);
-	posix_memalign(&buf, pagesize, pagesize);
-	mprotect(buf, pagesize, PROT_READ | PROT_WRITE | PROT_EXEC);
-
+	posix_memalign(&buf, debugger.page_size, debugger.page_size);
+	mprotect(buf, debugger.page_size, PROT_READ | PROT_WRITE | PROT_EXEC);
 	memcpy(buf, code, sizeof(code));
+	return ((int (*)(void))buf);
+}
 
-	test_op_len();
-	size_t	len[30] = {0};
-	uint8_t	*ptr = (uint8_t *)buf;
-	len[0] = op_len(ptr);
-	ptr += len[0];
-	len[1] = op_len(ptr);
-	ptr += len[1];
-	len[2] = op_len(ptr);
-	ptr += len[2];
-	len[3] = op_len(ptr);
-	ptr += len[3];
-	len[4] = op_len(ptr);
-	printf("len[0]: %lu\n", len[0]);
-	printf("len[1]: %lu\n", len[1]);
-	printf("len[2]: %lu\n", len[2]);
-	printf("len[3]: %lu\n", len[4]);
 
-	// Execute the machine code
-	//int (*func)() = buf;
-	//int result = func();
 
-	//printf("Result of the machine code: %d\n", result);
 
-	free(buf);
+int main() {
+	t_debugger	debugger = init();
+	int	(*fn)(void);
+	int	result;
+
+	fn = alloc_dummy_fn(debugger);
+	result = fn();
+	printf("Result of the machine code: %d\n", result);
+	replaced_program_byte = insert_breakpoint_here((void *)fn);
+	result = fn();
+	printf("Result of the machine code: %d\n", result);
+
+	free(fn);
 	return 0;
 }
 
