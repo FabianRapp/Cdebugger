@@ -6,9 +6,10 @@
 # endif // __USE_GNU
 
 # include <cstdlib>
+# include <stdint.h>
 
 class							Debugee;
 typedef size_t					t_word;
 typedef size_t					t_program_ptr;
-typedef unsigned long long int	t_reg;
+typedef uint64_t				t_reg;
 #endif // TYPES_HPP

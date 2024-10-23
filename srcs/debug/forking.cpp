@@ -29,11 +29,11 @@ void	setup_first_breakpoint(Debugee &debugee) {
 	debugee.cont();
 	//ERRNO_CHECK;
 	debugee.wait();
-	pc = debugee.get_pc();
-	pc--;
-	debugee.set_pc(pc);
-	debugee.cont();
-	debugee.wait();
+	//pc = debugee.get_pc();
+	//pc--;
+	//debugee.set_pc(pc);
+	//debugee.cont();
+	//debugee.wait();
 	//ERRNO_CHECK;
 	while (!debugee.finished()) {
 		breakpoint_handler(debugee);
@@ -51,8 +51,6 @@ void	fork_process(t_debugger *debugger, char **av, char **env) {
 	Debugee debugee(av[1], av + 1, env);
 	printf("after first waitpid\n");
 	ERRNO_CHECK;
-	debugee.cont();
-	debugee.wait();
 	printf("after second waitpid\n");
 	ERRNO_CHECK;
 

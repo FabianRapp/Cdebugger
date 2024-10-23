@@ -23,6 +23,20 @@ Debugee::Debugee(char *path, char **av, char **env)
 	ptrace(PTRACE_ATTACH, this->get_pid(), 0, 0);
 	std::cout << "debugging " << path << " with pid " << this->get_pid() << std::endl;
 
+	usleep(100000);
+	//PRINT_GREEN("!!!!!!!!!!!!");
+	//usleep(100000);
+	//this->wait();
+	//usleep(100000);
+	//this->cont();
+	//usleep(100000);
+	//PRINT_YELLOW("!!!!!!!!!!!!");
+	//usleep(100000);
+	//this->wait();
+	//usleep(100000);
+	//PRINT_RED("!!!!!!!!!!!!");
+	//usleep(100000);
+	//exit(0);
 	//TODO: data race with child process
 	//this->_refresh_regs();
 
@@ -128,8 +142,10 @@ void wait_print_exit_status(int status) {
 			PRINT_GREEN("Stopped by signal: " << strsignal(sig));
 		} else if (sig == 11) {
 			PRINT_RED("Stopped by signal: " << strsignal(sig));
+		} else if (sig == 19) {
+			PRINT_RED("waited proces had sig continue (19)");
 		} else {
-			PRINT_YELLOW("Stopped by signal: " << strsignal(sig));
+			PRINT_YELLOW("Stopped by signal: " << strsignal(sig) << "(" << sig << ")");
 		}
 	} else if (WIFCONTINUED(status)) {
 		PRINT_YELLOW("Continued");

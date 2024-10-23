@@ -21,7 +21,12 @@ void	remove_cur_breakpoint(t_debugger *debugger) {
 // return false incase the programm should continue
 bool	handle_input(Debugee &debugee, char *line) {
 	if (!strncmp(line, "continue", strlen("continue"))) {
+		if (!bp || bp->get_pos() != debugee.get_pc()) {
+			debugee.cont();
+			return (false);
+		}
 		delete bp;
+		bp = 0;
 		debugee.cont();
 		return (false);
 	} else if (!strncmp(line, "REGS", strlen("REGS"))) {
