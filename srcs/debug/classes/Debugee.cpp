@@ -16,7 +16,7 @@ Debugee::Debugee(char *path, char **av, char **env)
 		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
 		//PRINT_YELLOW("raise(SIGSTOP)");
 		//PRINT_YELLOW("execve %s" << av[1]);
-		execve(path, av + 1, env);
+		execve(path, av, env);
 		assert(0 && "execve failed");
 	}
 	PRINT_RED("TEST");
@@ -24,7 +24,8 @@ Debugee::Debugee(char *path, char **av, char **env)
 	std::cout.flush();
 	ptrace(PTRACE_ATTACH, this->get_pid(), 0, 0);
 	std::cout.flush();
-	PRINT_GREEN("debugging " << av[1] << " with pid " << this->get_pid());
+	printf("|%s|\n", path);
+	std::cout << "debugging " << path << " with pid " << this->get_pid() << std::endl;
 
 	PRINT_RED("TEST");
 	//TODO: data race with child process
