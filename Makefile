@@ -15,6 +15,7 @@ SRCS := srcs/debug/debugger.cpp \
 		srcs/debug/get_regs.cpp \
 		srcs/debug/debug_debugger.cpp \
 		srcs/debug/classes/Breakpoint.cpp \
+		srcs/debug/classes/Debugee.cpp \
 
 
 

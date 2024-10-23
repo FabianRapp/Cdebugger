@@ -1,20 +1,33 @@
 #include <debugger.hpp>
 #include <Breakpoint.hpp>
-#include <Tracee.hpp>
+#include <Debugee.hpp>
 
-Breakpoint::Breakpoint(void)
-	: _pos(0) , _replaced_word(0){
-	assert("Breakpoint has to be constructed with pos and debugee or "
-		"with a copy" && 0);
+//inserts INT3 at postion
+Breakpoint::Breakpoint(t_program_ptr position, Debugee &debugee)
+	: _pos(position),
+	_replaced_word(debugee.get_word(position)),
+	_debugee(debugee) {
+	t_word	new_word;
+
+	t_word	mask = 0xFF;
+	new_word = this->get_replaced_word() & ~mask;
+	new_word |= INT3_OPCODE;
+	debugee.set_word(position, new_word);
 }
 
-//TODO:
-Breakpoint::Breakpoint(t_program_ptr position, Tracee debugee)
-	: _pos(position), _replaced_word(0) {
+Breakpoint::~Breakpoint(void) {
+	this->_debugee.set_word(this->get_pos(), this->get_replaced_word());
+	this->_debugee.set_pc(this->get_pos());
 }
 
 Breakpoint::Breakpoint(const Breakpoint &old)
-	: _pos(old.get_pos()), _replaced_word(old.get_replaced_word()) {
+	: _pos(old.get_pos()),
+	_replaced_word(old.get_replaced_word()),
+	_debugee(old._debugee) {
+}
+
+Breakpoint	*Breakpoint::new_bp(t_program_ptr position, Debugee &debugee) {
+	return (new Breakpoint(position, debugee));
 }
 
 size_t	Breakpoint::get_pos(void) const {

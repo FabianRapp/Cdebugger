@@ -1,24 +1,20 @@
 #ifndef BREAKPOINT_HPP
 # define BREAKPOINT_HPP
 
+# include <types.hpp>
 # include <cstdlib>
-
-class Tracee;
-
-typedef size_t	t_word;
-typedef size_t	t_program_ptr;
-
 
 class Breakpoint {
 private:
 	const	t_program_ptr	_pos;
 	const	t_word			_replaced_word;
-							Breakpoint(void);
-public:
-							Breakpoint(t_program_ptr position, Tracee debugee);
-							Breakpoint(const Breakpoint &old);
+			Debugee			&_debugee;
 			Breakpoint		&operator=(const Breakpoint &right);
+							Breakpoint(t_program_ptr position, Debugee &debugee);
+public:
+	static Breakpoint		*new_bp(t_program_ptr position, Debugee &debugee);
 							~Breakpoint(void);
+							Breakpoint(const Breakpoint &old);
 			t_program_ptr	get_pos(void) const;
 			t_word			get_replaced_word(void) const;
 

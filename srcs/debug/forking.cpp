@@ -14,10 +14,7 @@ void print_exit_status(int status) {
 	}
 }
 
-void	setup_first_breakpoint(t_debugger *debugger) {
-	int status;
-
-	ptrace(PTRACE_GETREGS, debugger->pid, NULL, &debugger->regs);
+void	setup_first_breakpoint(Debugee &debugee) {
 	ERRNO_CHECK;
 
 	//for (int i = 3000; i; i--)
@@ -41,44 +38,39 @@ void	setup_first_breakpoint(t_debugger *debugger) {
 	//	ERRNO_CHECK;
 	//	//print_exit_status(status);
 	//}
-	check_child_status(debugger->pid);
+	
 	printf("inserting breakpoint \n");
-	ptrace(PTRACE_GETREGS, debugger->pid, NULL, &debugger->regs);
-	insert_breakpoint_here((uint8_t *)debugger->regs.rip, debugger);
+	Breakpoint	*bp = debugee.new_bp(debugee.get_pc());
 	ERRNO_CHECK;
 
 	printf("PRACE_CONT 1\n");
-	ptrace(PTRACE_CONT, debugger->pid, NULL, NULL);
+	debugee.cont();
 	ERRNO_CHECK;
 
 	//WAIT for first break point
-	waitpid(debugger->pid, &status, 0);
+	debugee.wait();
 	printf("after waitpid for child after PTRACE_CONT (after first breakpoint)\n");
 	ERRNO_CHECK;
-	print_exit_status(status);
 
 	if (1) {
-		remove_cur_breakpoint(debugger);
+		std::cout << "delete bp" << std::endl;
+		delete	bp;
+		std::cout << "cont" << std::endl;
+		debugee.cont();
 		//breakpoint_handler(debugger);
 	} else {
-		ptrace(PTRACE_CONT, debugger->pid, 0, 0);
-		waitpid(debugger->pid, &status, 0);
+		debugee.cont();
+		debugee.wait();
 		printf("after waitpid\n");
+		ERRNO_CHECK;
+	
+		debugee.cont();
+		debugee.wait();
+		printf("after waitpid\n");
+		ERRNO_CHECK;
 
-		ptrace(PTRACE_CONT, debugger->pid, 0, 0);
-		waitpid(debugger->pid, &status, 0);
+		debugee.cont();
 		ERRNO_CHECK;
-		printf("after waitpid\n");
-		ERRNO_CHECK;
-		ptrace(PTRACE_CONT, debugger->pid, 0, 0);
-	}
-	ERRNO_CHECK;
-	int i = 0;
-	while (1) {
-		i++;
-		waitpid(debugger->pid, &status, 0);
-		assert(ptrace(PTRACE_CONT, debugger->pid, 0, 0) >= 0);
-		//printf("%d\n", i);
 	}
 	ERRNO_CHECK;
 }
@@ -86,54 +78,28 @@ void	setup_first_breakpoint(t_debugger *debugger) {
 void	fork_process(t_debugger *debugger, char **av, char **env) {
 	ERRNO_CHECK;
 	debugger->pid = fork();
-	ERRNO_CHECK;
 	assert("fork failed" && debugger->pid >= 0);
 	if (debugger->pid == 0) {
 		ERRNO_CHECK;
-		printf("ptrace(PTRACE_TRACEME)\n");
+		PRINT_YELLOW("ptrace(PTRACE_TRACEME)");
 		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-		printf("raise(SIGSTOP)\n");
-		printf("execve %s\n", av[1]);
+		PRINT_YELLOW("raise(SIGSTOP)");
+		PRINT_YELLOW("execve %s" << av[1]);
 		execve(av[1], av + 1, env);
 		assert(0 && "execve failed");
 	} else {
-
-		int status;
-		ERRNO_CHECK;
-		ptrace(PTRACE_ATTACH, debugger->pid, 0, 0);
-		ERRNO_CHECK;
-		waitpid(debugger->pid, &status, 0);
-		if (WIFEXITED(status)) {
-			printf("Child exited prematurely with status %d\n", WEXITSTATUS(status));
-			return;
-		}
+		Debugee debugee(debugger->pid);
+		printf("Debugging %s with pid %d\n", av[1], debugger->pid);
+		debugee.wait();
 		printf("after first waitpid\n");
 		ERRNO_CHECK;
-		print_exit_status(status);
-		printf("Debugging %s with pid %d\n", av[1], debugger->pid);
-		ERRNO_CHECK;
-		ptrace(PTRACE_CONT, debugger->pid, 0, 0);
-		waitpid(debugger->pid, &status, 0);
-		if (WIFEXITED(status)) {
-			printf("Child exited prematurely with status %d\n", WEXITSTATUS(status));
-			return;
-		}
+		debugee.cont();
+		debugee.wait();
 		printf("after second waitpid\n");
 		ERRNO_CHECK;
-		print_exit_status(status);
 
-		if (1) {
-			setup_first_breakpoint(debugger);
-		} else {
-			ptrace(PTRACE_CONT, debugger->pid, 0, 0);
-			waitpid(debugger->pid, &status, 0);
-			if (WIFEXITED(status)) {
-				printf("Child exited prematurely with status %d\n", WEXITSTATUS(status));
-			}
-			printf("after third waitpid\n");
-			ERRNO_CHECK;
-			print_exit_status(status);
-		}
+		setup_first_breakpoint(debugee);
 		ERRNO_CHECK;
+		debugee.wait();
 	}
 }
