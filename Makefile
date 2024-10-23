@@ -2,7 +2,7 @@ CC := c++
 
 INCLUDES := -I./includes -I./capstone/include/
 
-CFLAGS := -Wall -Wextra -O0 -g $(INCLUDES) -lreadline
+CFLAGS := -Wall -Wextra -O0 -g -fsanitize=address $(INCLUDES) -lreadline
 
 LIBS := -L./capstone/lib -lcapstone
 
@@ -34,7 +34,7 @@ debugger: $(OBJS)
 	$(CC) -o $(NAME) $(OBJS) $(LIBS) $(CFLAGS)
 
 dummy: $(OBJS_PROGRAMM)
-	$(CC) $(CFLAGS) $(OBJS_PROGRAMM) -o $(NAME_PROGRAMM)
+	$(CC) -Wall -Wextra -g -O0 $(INCLUDES) $(SRCS_PROGRAMM) -o $(NAME_PROGRAMM)
 
 $(OBJS_DIR)%.o: srcs/%.c
 	mkdir -p $(@D)

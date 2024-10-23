@@ -1,12 +1,12 @@
 #include <debugger.hpp>
 
-size_t op_len(uint8_t *op) {
+size_t op_len(t_program_ptr op) {
 	csh handle;
 	cs_insn *insn;
 	size_t size = 0;
 
 	if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) == CS_ERR_OK) {
-		if (cs_disasm(handle, op, 15, (uintptr_t)op, 1, &insn) > 0) {
+		if (cs_disasm(handle, (uint8_t *)op, 15, (uintptr_t)op, 1, &insn) > 0) {
 			size = insn[0].size;
 			cs_free(insn, 1);
 		}
@@ -30,7 +30,7 @@ void test_op_len(void) {
 	};
 
 	size_t len[30] = {0};
-	uint8_t* ptr = (uint8_t*)code;
+	t_program_ptr ptr = (t_program_ptr)code;
 
 	// int3
 	len[0] = op_len(ptr);

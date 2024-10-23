@@ -3,18 +3,33 @@
 Debugee::Debugee(void) {
 }
 
-void	Debugee::set_pid(pid_t pid) {
-	this->_pid = pid;
-}
-
 pid_t	Debugee::get_pid(void) const {
 	return (this->_pid);
 }
 
-Debugee::Debugee(pid_t pid)
-	: _pid(pid) {
-	//todo: does this need options? which ars and what data type
+Debugee::Debugee(char *path, char **av, char **env)
+	: _pid(fork()), _finished(false) {
+	assert("fork failed" && this->get_pid() >= 0);
+	if (this->get_pid() == 0) {
+		ERRNO_CHECK;
+		//PRINT_YELLOW("ptrace(PTRACE_TRACEME)");
+		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+		//PRINT_YELLOW("raise(SIGSTOP)");
+		//PRINT_YELLOW("execve %s" << av[1]);
+		execve(path, av + 1, env);
+		assert(0 && "execve failed");
+	}
+	PRINT_RED("TEST");
+	printf("?!\n");
+	std::cout.flush();
 	ptrace(PTRACE_ATTACH, this->get_pid(), 0, 0);
+	std::cout.flush();
+	PRINT_GREEN("debugging " << av[1] << " with pid " << this->get_pid());
+
+	PRINT_RED("TEST");
+	//TODO: data race with child process
+	usleep(1000);
+	//this->wait();
 }
 
 Debugee::~Debugee(void) {
@@ -98,21 +113,40 @@ void	Debugee::set_word(t_program_ptr address, t_word word) {
 
 void wait_print_exit_status(int status) {
 	if (WIFSIGNALED(status)) {
-		printf("Exited due to uncaught signal: %d\n", WTERMSIG(status));
+		PRINT_RED("Exited due to uncaught signal: " << WEXITSTATUS(status));
 	} else if (WIFEXITED(status)) {
-		printf("Exited normally with exit code %d\n", WEXITSTATUS(status));
+		PRINT_RED("Exited normally with exit code " << WIFEXITED(status));
 	} else if (WIFSTOPPED(status)) {
-		printf("Stopped by signal: %d\n", WSTOPSIG(status));
+		PRINT_RED("Stopped by signal: " << WSTOPSIG(status));
 	} else if (WIFCONTINUED(status)) {
-		printf("Continued\n");
+		PRINT_RED("Continued");
 	} else {
-		printf("Exited with unknown status\n");
+		PRINT_RED("Exited with unknown status");
 	}
 }
 
 void	Debugee::wait(void) {
 	int	status;
 
-	waitpid(this->get_pid(), &status, 0);
+	if (waitpid(this->get_pid(), &status, 0) < 0)
+	{
+		if (WIFEXITED(status))
+			this->_finished = true;
+	}
 	wait_print_exit_status(status);
 }
+
+bool	Debugee::finished(void) {
+	return (this->_finished);
+}
+
+bool	Debugee::blocked() {
+	int status;
+
+	waitpid(this->get_pid(), &status, WNOHANG | WUNTRACED);
+	if (WIFSTOPPED(status))
+		return (true);
+	ERRNO_CHECK;
+	return (false);
+}
+

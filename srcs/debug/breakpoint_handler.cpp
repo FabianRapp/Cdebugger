@@ -19,9 +19,10 @@ void	remove_cur_breakpoint(t_debugger *debugger) {
 }
 
 // return false incase the programm should continue
-bool	handle_input(t_debugger *debugger, char *line) {
+bool	handle_input(Debugee &debugee, char *line) {
 	if (!strncmp(line, "continue", strlen("continue"))) {
-		remove_cur_breakpoint(debugger);
+		delete bp;
+		debugee.cont();
 		return (false);
 	} else if (!strncmp(line, "REGS", strlen("REGS"))) {
 		printf("not active\n");
@@ -45,12 +46,11 @@ bool	handle_input(t_debugger *debugger, char *line) {
 	return (true);
 }
 
-void	breakpoint_handler(t_debugger *debugger) {
+void	breakpoint_handler(Debugee &debugee) {
 	printf("Breakpoint reached:\n");
 	char	*line = readline("debugger(input): ");
 	while (line) {
-		update_regs(debugger);
-		if (!handle_input(debugger, line))
+		if (!handle_input(debugee, line))
 			break ;
 		free(line);
 		line = readline("debugger: ");

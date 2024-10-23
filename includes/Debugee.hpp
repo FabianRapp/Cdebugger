@@ -14,15 +14,16 @@
 
 # include <macros.h>
 
+//todo: does constructor need options for PTRACE_ATTACH?
 class Debugee {
 private:
 								Debugee(void);
 		pid_t					_pid;
-		void					set_pid(pid_t pid);
 		void					_refresh_regs(void);
 		struct user_regs_struct	_regs;
+		bool					_finished;
 public:
-								Debugee(pid_t pid);
+								Debugee(char *path, char **av, char **env);
 								Debugee(const Debugee &old);
 		Debugee					&operator=(const Debugee &right);
 								~Debugee(void);
@@ -35,6 +36,8 @@ public:
 		t_word					get_word(t_program_ptr address);
 		void					set_word(t_program_ptr address, t_word word);
 		void					wait(void);
+		bool					finished(void);
+		bool					blocked(void);
 };
 
 #endif //DEBUGEE_HPP

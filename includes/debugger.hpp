@@ -36,6 +36,7 @@
 
 extern uint8_t		*replaced_program_location;
 extern uint64_t		replaced_word;
+extern Breakpoint	*bp;
 
 typedef struct s_debugger {
 	Debugee					*debugee;
@@ -46,12 +47,12 @@ typedef struct s_debugger {
 
 void	insert_breakpoint_here(uint8_t *program, t_debugger *debugger);
 //void	int3_sig_handler(int sig, siginfo_t *info, void *context);
-void	breakpoint_handler(t_debugger *debugger);
+void	breakpoint_handler(Debugee &debugee);
 void	fork_process(t_debugger *debugger, char **av, char **env);
 
 
-void test_op_len(void);
-size_t op_len(uint8_t *op);
+void	test_op_len(void);
+size_t	op_len(t_program_ptr op);
 
 void	update_regs(t_debugger *debugger);
 
