@@ -13,10 +13,10 @@ Debugee::Debugee(char *path, char **av, char **env)
 	if (this->get_pid() == 0) {
 		personality(ADDR_NO_RANDOMIZE);
 		ERRNO_CHECK;
-		PRINT_YELLOW("ptrace(PTRACE_TRACEME)");
+		PRINT_YELLOW("CHILD: ptrace(PTRACE_TRACEME)");
 		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
 		//PRINT_YELLOW("raise(SIGSTOP)");
-		PRINT_YELLOW("execve " << av[1]);
+		PRINT_YELLOW("CHILD: going into execve " << path);
 		execve(path, av, env);
 		assert(0 && "execve failed");
 	}
@@ -89,9 +89,9 @@ void	Debugee::_refresh_regs(void) {
 	}
 }
 
-t_reg	Debugee::get_pc(void) {
+t_program_ptr	Debugee::get_pc(void) {
 	this->_refresh_regs();
-	return (this->_regs.rip);
+	return ((t_program_ptr)this->_regs.rip);
 }
 
 void	Debugee::set_pc(t_reg new_pc) {

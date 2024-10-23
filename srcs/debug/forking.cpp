@@ -22,11 +22,14 @@ void	setup_first_breakpoint(Debugee &debugee) {
 	//printf("inserting breakpoint \n");
 
 	//debugee.step();
-	//debugee.wait();
-
+	debugee.cont();
+	debugee.wait();
 
 
 	t_program_ptr pc = debugee.get_pc();
+	//pc = 0x000000003fa8;
+	//pc += 0x12a;
+	//pc = 0x7ffff7847a1e;
 	bp = debugee.new_bp(pc);
 
 	//ERRNO_CHECK;

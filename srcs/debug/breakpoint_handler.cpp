@@ -84,6 +84,23 @@ bool	handle_input(Debugee &debugee, char *line) {
 void	breakpoint_handler(Debugee &debugee) {
 	PRINT_GREEN("PC at " << std::hex << debugee.get_pc());
 	PRINT_GREEN("cur word at bp: " << std::hex << debugee.get_word(debugee.get_pc()));
+	//	t_word	cur_word = debugee.get_word(debugee.get_pc());
+	//	if ((cur_word & 0xFF) == 0xCC) {
+	//		PRINT_GREEN("next steped into breakpoint");
+	//		assert(bp->get_pos() == debugee.get_pc());
+	//		debugee.set_pc(bp->get_pos());
+	//		delete bp;
+	//		bp = 0;
+	//	}
+	//	debugee.step();
+	//	//usleep(100);
+	//return ;
+
+
+
+
+
+
 	char	*line = readline("debugger(): ");
 	while (line) {
 		add_history(line);//history leaking rn on exit

@@ -32,7 +32,7 @@ Breakpoint	*Breakpoint::new_bp(t_program_ptr position, Debugee &debugee) {
 	return (new Breakpoint(position, debugee));
 }
 
-size_t	Breakpoint::get_pos(void) const {
+t_program_ptr	Breakpoint::get_pos(void) const {
 	return (this->_pos);
 }
 

@@ -31,7 +31,7 @@ public:
 		pid_t					get_pid(void) const;
 		void					cont(void);
 		void					step(void);
-		t_reg					get_pc(void);
+		t_program_ptr			get_pc(void);
 		void					set_pc(t_reg new_pc);
 		Breakpoint				*new_bp(t_program_ptr address);
 		t_word					get_word(t_program_ptr address);
