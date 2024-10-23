@@ -25,7 +25,11 @@ bool	handle_input(Debugee &debugee, char *line) {
 			debugee.cont();
 			return (false);
 		}
+		PRINT_GREEN("continue steped into breakpoint");
+		t_program_ptr	pos = bp->get_pos();
+		debugee.set_pc(bp->get_pos());
 		delete bp;
+		//debugee.set_pc(pos - 1);
 		bp = 0;
 		debugee.cont();
 		return (false);
@@ -39,6 +43,14 @@ bool	handle_input(Debugee &debugee, char *line) {
 		//	context->uc_mcontext.gregs[REG_RDX]);
 	} else if (!strncmp(line, "n", 1)
 	    || !strncmp(line, "next", strlen("next"))) {
+		t_word	cur_word = debugee.get_word(debugee.get_pc());
+		if ((cur_word & 0xFF) == 0xCC) {
+			PRINT_GREEN("next steped into breakpoint");
+			assert(bp->get_pos() == debugee.get_pc());
+			debugee.set_pc(bp->get_pos());
+			delete bp;
+			bp = 0;
+		}
 		//PRINT_RED("bp: " << bp->get_pos());
 		////delete bp;
 		////todo: make this part of Debugee (Debugee::get_next_len())
@@ -70,9 +82,9 @@ bool	handle_input(Debugee &debugee, char *line) {
 }
 
 void	breakpoint_handler(Debugee &debugee) {
-	//printf("Breakpoint reached:\n");
-
-	char	*line = readline("debugger(input): ");
+	PRINT_GREEN("PC at " << std::hex << debugee.get_pc());
+	PRINT_GREEN("cur word at bp: " << std::hex << debugee.get_word(debugee.get_pc()));
+	char	*line = readline("debugger(): ");
 	while (line) {
 		add_history(line);//history leaking rn on exit
 		if (!handle_input(debugee, line))

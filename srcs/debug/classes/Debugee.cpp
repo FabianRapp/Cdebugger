@@ -16,7 +16,7 @@ Debugee::Debugee(char *path, char **av, char **env)
 		PRINT_YELLOW("ptrace(PTRACE_TRACEME)");
 		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
 		//PRINT_YELLOW("raise(SIGSTOP)");
-		PRINT_YELLOW("execve %s" << av[1]);
+		PRINT_YELLOW("execve " << av[1]);
 		execve(path, av, env);
 		assert(0 && "execve failed");
 	}
@@ -124,6 +124,7 @@ t_word	Debugee::get_word(t_program_ptr address) {
 }
 
 void	Debugee::set_word(t_program_ptr address, t_word word) {
+	PRINT_YELLOW("at " << std::hex << address << ": replacing" << this->get_word(address) << " with " << word);
 	if (ptrace(PTRACE_POKETEXT, this->get_pid(), address, word) < 0) {
 		std::cerr << "Error Debugee::set_word(): PTRACE_POKETEXT failed"
 			<< std::endl;

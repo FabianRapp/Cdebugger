@@ -12,6 +12,8 @@ Breakpoint::Breakpoint(t_program_ptr position, Debugee &debugee)
 	t_word	mask = 0xFF;
 	new_word = this->get_replaced_word() & ~mask;
 	new_word |= INT3_OPCODE;
+	PRINT_YELLOW("old word: " << std::hex << this->get_replaced_word());
+	PRINT_YELLOW("new word: " << std::hex << new_word);
 	debugee.set_word(position, new_word);
 }
 

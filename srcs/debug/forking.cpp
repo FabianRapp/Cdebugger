@@ -20,15 +20,21 @@ void	setup_first_breakpoint(Debugee &debugee) {
 	ERRNO_CHECK;
 
 	//printf("inserting breakpoint \n");
+
+	//debugee.step();
+	//debugee.wait();
+
+
+
 	t_program_ptr pc = debugee.get_pc();
 	bp = debugee.new_bp(pc);
 
 	//ERRNO_CHECK;
 
 	//printf("PRACE_cont 1\n");
-	debugee.cont();
+	//debugee.cont();
 	//ERRNO_CHECK;
-	debugee.wait();
+	//debugee.wait();
 	//pc = debugee.get_pc();
 	//pc--;
 	//debugee.set_pc(pc);
