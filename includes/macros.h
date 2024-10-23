@@ -2,7 +2,7 @@
 # define MACROS_H
 
 # ifndef	PRINT_RED
-#  define PRINT_RED(content) std::cout << "\033[31m" << content << "0\033[0m" << std::endl;
+#  define PRINT_RED(content) std::cout << "\033[31m" << content << "\033[0m" << std::endl;
 # endif //PRINT_RED
 
 # ifndef PRINT_YELLOW

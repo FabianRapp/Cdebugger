@@ -11,6 +11,7 @@
 # include <string>
 # include <cstring>
 # include <sys/wait.h>
+# include <sys/personality.h>
 
 # include <macros.h>
 

@@ -19,17 +19,22 @@ void print_exit_status(int status) {
 void	setup_first_breakpoint(Debugee &debugee) {
 	ERRNO_CHECK;
 
-	printf("inserting breakpoint \n");
+	//printf("inserting breakpoint \n");
 	t_program_ptr pc = debugee.get_pc();
 	bp = debugee.new_bp(pc);
 
-	ERRNO_CHECK;
+	//ERRNO_CHECK;
 
-	printf("PRACE_cont 1\n");
+	//printf("PRACE_cont 1\n");
 	debugee.cont();
-	ERRNO_CHECK;
+	//ERRNO_CHECK;
 	debugee.wait();
-	ERRNO_CHECK;
+	pc = debugee.get_pc();
+	pc--;
+	debugee.set_pc(pc);
+	debugee.cont();
+	debugee.wait();
+	//ERRNO_CHECK;
 	while (!debugee.finished()) {
 		breakpoint_handler(debugee);
 		ERRNO_CHECK;
@@ -44,7 +49,6 @@ void	fork_process(t_debugger *debugger, char **av, char **env) {
 	ERRNO_CHECK;
 
 	Debugee debugee(av[1], av + 1, env);
-	std::cout<<"??TEST??" << std::endl;
 	printf("after first waitpid\n");
 	ERRNO_CHECK;
 	debugee.cont();

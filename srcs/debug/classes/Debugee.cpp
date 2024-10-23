@@ -11,26 +11,31 @@ Debugee::Debugee(char *path, char **av, char **env)
 	: _pid(fork()), _finished(false) {
 	assert("fork failed" && this->get_pid() >= 0);
 	if (this->get_pid() == 0) {
+		personality(ADDR_NO_RANDOMIZE);
 		ERRNO_CHECK;
-		//PRINT_YELLOW("ptrace(PTRACE_TRACEME)");
+		PRINT_YELLOW("ptrace(PTRACE_TRACEME)");
 		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-		//PRINT_YELLOW("raise(SIGSTOP)");
-		//PRINT_YELLOW("execve %s" << av[1]);
+		PRINT_YELLOW("raise(SIGSTOP)");
+		PRINT_YELLOW("execve %s" << av[1]);
 		execve(path, av, env);
 		assert(0 && "execve failed");
 	}
-	PRINT_RED("TEST");
-	printf("?!\n");
-	std::cout.flush();
 	ptrace(PTRACE_ATTACH, this->get_pid(), 0, 0);
 	std::cout.flush();
-	printf("|%s|\n", path);
 	std::cout << "debugging " << path << " with pid " << this->get_pid() << std::endl;
 
-	PRINT_RED("TEST");
 	//TODO: data race with child process
+	this->_refresh_regs();
+
 	usleep(1000);
-	//this->wait();
+
+
+	this->wait();
+	t_reg *regs = (t_reg *) (&this->_regs);
+	//for (int i =0 ; i < 28; i++) {
+	//	printf("reg %d : 0x%016x\n", i, (unsigned)regs[i]);
+	//}
+	printf("start PC: %16llux\n", this->get_pc());
 }
 
 Debugee::~Debugee(void) {
@@ -114,27 +119,37 @@ void	Debugee::set_word(t_program_ptr address, t_word word) {
 
 void wait_print_exit_status(int status) {
 	if (WIFSIGNALED(status)) {
-		PRINT_RED("Exited due to uncaught signal: " << WEXITSTATUS(status));
+		PRINT_YELLOW("Exited due to uncaught signal: " << WEXITSTATUS(status));
 	} else if (WIFEXITED(status)) {
-		PRINT_RED("Exited normally with exit code " << WIFEXITED(status));
+		PRINT_YELLOW("Exited normally with exit code " << WIFEXITED(status));
 	} else if (WIFSTOPPED(status)) {
-		PRINT_RED("Stopped by signal: " << WSTOPSIG(status));
+		int	sig = WSTOPSIG(status);
+		if (sig == 5) {
+			PRINT_GREEN("Stopped by signal: " << strsignal(sig));
+		} else if (sig == 11) {
+			PRINT_RED("Stopped by signal: " << strsignal(sig));
+		} else {
+			PRINT_YELLOW("Stopped by signal: " << strsignal(sig));
+		}
 	} else if (WIFCONTINUED(status)) {
-		PRINT_RED("Continued");
+		PRINT_YELLOW("Continued");
 	} else {
-		PRINT_RED("Exited with unknown status");
+		PRINT_YELLOW("Exited with unknown status");
 	}
 }
 
 void	Debugee::wait(void) {
 	int	status;
 
-	if (waitpid(this->get_pid(), &status, 0) < 0)
-	{
-		if (WIFEXITED(status))
-			this->_finished = true;
+	waitpid(this->get_pid(), &status, 0);
+	if (!WIFSIGNALED(status) && WIFEXITED(status)) {
+		this->_finished = true;
+	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == 11) {
+		PRINT_RED("CHILD SEGFAULTED");
+		this->_finished = true;
 	}
 	wait_print_exit_status(status);
+	ERRNO_CHECK;
 }
 
 bool	Debugee::finished(void) {
