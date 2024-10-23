@@ -69,6 +69,7 @@ void	breakpoint_handler(Debugee &debugee) {
 
 	char	*line = readline("debugger(input): ");
 	while (line) {
+		add_history(line);//history leaking rn on exit
 		if (!handle_input(debugee, line))
 			break ;
 		free(line);

@@ -15,27 +15,27 @@ Debugee::Debugee(char *path, char **av, char **env)
 		ERRNO_CHECK;
 		PRINT_YELLOW("ptrace(PTRACE_TRACEME)");
 		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-		PRINT_YELLOW("raise(SIGSTOP)");
+		//PRINT_YELLOW("raise(SIGSTOP)");
 		PRINT_YELLOW("execve %s" << av[1]);
 		execve(path, av, env);
 		assert(0 && "execve failed");
 	}
 	ptrace(PTRACE_ATTACH, this->get_pid(), 0, 0);
-	std::cout.flush();
 	std::cout << "debugging " << path << " with pid " << this->get_pid() << std::endl;
 
 	//TODO: data race with child process
-	this->_refresh_regs();
+	//this->_refresh_regs();
 
-	usleep(1000);
+	//usleep(1000);
+	//this->cont();
 
 
-	this->wait();
-	t_reg *regs = (t_reg *) (&this->_regs);
+	//this->wait();
+	//t_reg *regs = (t_reg *) (&this->_regs);
 	//for (int i =0 ; i < 28; i++) {
 	//	printf("reg %d : 0x%016x\n", i, (unsigned)regs[i]);
 	//}
-	printf("start PC: %16llux\n", this->get_pc());
+	//printf("start PC: %16llux\n", this->get_pc());
 }
 
 Debugee::~Debugee(void) {

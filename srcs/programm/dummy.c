@@ -16,7 +16,7 @@ void	setup_sigtrap(void) {
 }
 int	main(void) {
 	//setup_sigtrap();
-	BASIC_BREAK;
+	//BASIC_BREAK;
 	printf("Hello from programm\n");
 	for (int i = 0; i < 3; i++) {
 		printf("%d\n", i);
