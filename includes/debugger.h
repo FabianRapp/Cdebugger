@@ -25,7 +25,9 @@
 # include <capstone/capstone.h>
 
 # ifndef ERRNO_CHECK
-#  define ERRNO_CHECK do{if(errno){printf("errno: %s\n",strerror(errno));}}while(0)
+#  define ERRNO_CHECK do {if (errno){ \
+	printf("errno: %s(%s line %d)\n", strerror(errno), __FILE__, __LINE__); \
+	assert(errno == 0);}} while(0)
 # endif //ERNNO_CHECK
 
 
@@ -48,7 +50,7 @@
 # endif // BASIC_BREAK
 
 extern uint8_t		*replaced_program_location;
-extern uintptr_t	replaced_word;
+extern uint64_t		replaced_word;
 
 typedef struct s_debugger {
 	size_t					page_size;
@@ -65,4 +67,9 @@ void	fork_process(t_debugger *debugger, char **av, char **env);
 void test_op_len(void);
 size_t op_len(uint8_t *op);
 
+void	update_regs(t_debugger *debugger);
+
+void	check_child_status(pid_t child_pid);
+
+void	remove_cur_breakpoint(t_debugger *debugger);
 #endif //DEBUGGER_H

@@ -1,19 +1,29 @@
 #include <debugger.h>
 
 uint8_t		*replaced_program_location;
-uintptr_t	replaced_word;
+uint64_t	replaced_word;
 
 // return the removed instruction byte
 void	insert_breakpoint_here(uint8_t *program, t_debugger *debugger) {
 	{
 		replaced_program_location = program;
-		replaced_word = ptrace(PTRACE_PEEKTEXT, debugger->pid, program, NULL);
-		printf("old word: %lx\n", replaced_word);
+		printf("inserting at %p\n", program);
+		printf("inserting at %p\n", program);
+		replaced_word = ptrace(PTRACE_PEEKTEXT, debugger->pid, debugger->regs.rip, NULL);
+		printf("old word: %16lx\n", replaced_word);
 	}
 	{
-		uintptr_t	word = INT3_OPCODE;
-		word <<= (sizeof word) - 1;
-		ptrace(PTRACE_POKETEXT, debugger->pid, program, word);
+		const size_t shift_size = ((sizeof (uint64_t)) - 1) * 8;
+		uint64_t	opcode = ((uint8_t)INT3_OPCODE);
+		opcode <<= shift_size;
+		uint64_t	new_word = 0xFF; 
+		new_word <<= shift_size;
+		new_word = ~new_word;
+		new_word &= replaced_word;
+		new_word |= opcode;
+		printf("new word: %16lx\n", new_word);
+
+		ptrace(PTRACE_POKETEXT, debugger->pid, debugger->regs.rip, new_word);
 	}
 }
 
@@ -42,7 +52,7 @@ t_debugger	init(int ac, char **av, char **env) {
 	test_op_len();
 	assert("need 1 argument: executable" && ac > 1);
 	debugger.page_size = sysconf(_SC_PAGESIZE);
-	breakpoint_init_print();
+	//breakpoint_init_print();
 	fork_process(&debugger, av, env);
 	return (debugger);
 }
@@ -73,6 +83,8 @@ void	old_test(t_debugger *debugger) {
 
 int main(int ac, char *av[], char *env[]) {
 	t_debugger	debugger = init(ac, av, env);
+	//int status;
+	//waitpid(debugger.pid,&status, 0);
 	(void)debugger;
 	return 0;
 }

@@ -2,7 +2,7 @@ CC := cc
 
 INCLUDES := -I./includes -I./capstone/include/
 
-CFLAGS := -Wall -Wextra -O0 -g -fsanitize=address $(INCLUDES) -lreadline 
+CFLAGS := -Wall -Wextra -O0 -g $(INCLUDES) -lreadline 
 
 LIBS := -L./capstone/lib -lcapstone
 
@@ -12,6 +12,8 @@ SRCS := srcs/debug/debugger.c \
 		srcs/debug/op_len.c \
 		srcs/debug/forking.c \
 		srcs/debug/breakpoint_handler.c \
+		srcs/debug/get_regs.c \
+		srcs/debug/debug_debugger.c \
 
 
 
