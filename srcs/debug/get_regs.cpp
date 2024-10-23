@@ -1,4 +1,4 @@
-#include <debugger.h>
+#include <debugger.hpp>
 
 void	update_regs(t_debugger *debugger) {
 	printf("update regs\n");

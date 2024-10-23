@@ -1,4 +1,4 @@
-#include <debugger.h>
+#include <debugger.hpp>
 
 void	check_child_status(pid_t child_pid) {
 	int status;

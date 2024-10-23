@@ -1,4 +1,4 @@
-#include <debugger.h>
+#include <debugger.hpp>
 
 void print_exit_status(int status) {
 	if (WIFSIGNALED(status)) {
@@ -44,7 +44,7 @@ void	setup_first_breakpoint(t_debugger *debugger) {
 	check_child_status(debugger->pid);
 	printf("inserting breakpoint \n");
 	ptrace(PTRACE_GETREGS, debugger->pid, NULL, &debugger->regs);
-	insert_breakpoint_here((void *)debugger->regs.rip, debugger);
+	insert_breakpoint_here((uint8_t *)debugger->regs.rip, debugger);
 	ERRNO_CHECK;
 
 	printf("PRACE_CONT 1\n");

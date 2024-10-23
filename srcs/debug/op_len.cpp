@@ -1,4 +1,4 @@
-#include <debugger.h>
+#include <debugger.hpp>
 
 size_t op_len(uint8_t *op) {
 	csh handle;

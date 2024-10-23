@@ -1,4 +1,4 @@
-#include <debugger.h>
+#include <debugger.hpp>
 
 void	remove_cur_breakpoint(t_debugger *debugger) {
 	assert(ptrace(PTRACE_GETREGS, debugger->pid, 0, &debugger->regs) >= 0);

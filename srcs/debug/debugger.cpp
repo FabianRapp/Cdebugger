@@ -1,4 +1,4 @@
-#include <debugger.h>
+#include <debugger.hpp>
 
 uint8_t		*replaced_program_location;
 uint64_t	replaced_word;
@@ -28,10 +28,10 @@ void	insert_breakpoint_here(uint8_t *program, t_debugger *debugger) {
 }
 
 void	breakpoint_init_print(void) {
-	char	*options[] = {"continue", "REGS", "n/next"};
+	std::string	options[] = {"continue", "REGS", "n/next"};
 	printf("Options:\n");
 	for (size_t i = 0; i < sizeof options / sizeof options[0]; i++) {
-		printf("\t%s\n", options[i]);
+		std::cout << "\t" << options[i] << std::endl;
 	}
 	printf("Cntr+d is undefined behaivior\n");
 }
@@ -74,10 +74,10 @@ void	old_test(t_debugger *debugger) {
 	fn = alloc_dummy_fn(*debugger);
 	result = fn();
 	printf("Result of the machine code: %d\n", result);
-	insert_breakpoint_here((void *)fn, debugger);
+	insert_breakpoint_here((uint8_t *)fn, debugger);
 	result = fn();
 	printf("Result of the machine code: %d\n", result);
-	free(fn);
+	free((void *)fn);
 }
 
 
