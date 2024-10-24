@@ -18,12 +18,14 @@
 //todo: does constructor need options for PTRACE_ATTACH?
 class Debugee {
 private:
-								Debugee(void);
 		pid_t					_pid;
 		void					_refresh_regs(void);
 		struct user_regs_struct	_regs;
 		bool					_finished;
+		bool					_paused;
+		int						_last_sig;
 public:
+								Debugee(void) = delete;
 								Debugee(char *path, char **av, char **env);
 								Debugee(const Debugee &old);
 		Debugee					&operator=(const Debugee &right);

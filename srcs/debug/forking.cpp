@@ -22,7 +22,7 @@ void	setup_first_breakpoint(Debugee &debugee) {
 	//printf("inserting breakpoint \n");
 
 	//debugee.step();
-	debugee.cont();
+	//debugee.cont();
 	debugee.wait();
 
 

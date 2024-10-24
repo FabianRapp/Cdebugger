@@ -1,59 +1,34 @@
 #include <Debugee.hpp>
 
-Debugee::Debugee(void) {
-}
+//long ptrace(enum __ptrace_request op, pid_t pid, void *addr, void *data);
 
 pid_t	Debugee::get_pid(void) const {
-	return (this->_pid);
+return (this->_pid);
 }
 
 Debugee::Debugee(char *path, char **av, char **env)
-	: _pid(fork()), _finished(false) {
+: _pid(fork()), _finished(false), _paused(false) {
 	assert("fork failed" && this->get_pid() >= 0);
-	if (this->get_pid() == 0) {
+	if (this->_pid == 0) {
 		personality(ADDR_NO_RANDOMIZE);
 		ERRNO_CHECK;
 		PRINT_YELLOW("CHILD: ptrace(PTRACE_TRACEME)");
-		ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-		//PRINT_YELLOW("raise(SIGSTOP)");
+		long ret = ptrace(PTRACE_TRACEME, 0, NULL, NULL, 0);
+		printf("ret: %ld\n", ret);
+		ERRNO_CHECK;
 		PRINT_YELLOW("CHILD: going into execve " << path);
-		execve(path, av, env);
+		execve(path, av, env);//causes a sigtrap so the parent can catch up
 		assert(0 && "execve failed");
 	}
-	ptrace(PTRACE_ATTACH, this->get_pid(), 0, 0);
-	std::cout << "debugging " << path << " with pid " << this->get_pid() << std::endl;
 
+	/* if both the child call TRACEME and the parent call ATTACH one will fail:
+	ptrace(PTRACE_ATTACH, this->_pid, 0, 0, 0); */
+	std::cout << "debugging " << path << " with pid " << this->_pid << std::endl;
 	usleep(100000);
-	//PRINT_GREEN("!!!!!!!!!!!!");
-	//usleep(100000);
-	//this->wait();
-	//usleep(100000);
-	//this->cont();
-	//usleep(100000);
-	//PRINT_YELLOW("!!!!!!!!!!!!");
-	//usleep(100000);
-	//this->wait();
-	//usleep(100000);
-	//PRINT_RED("!!!!!!!!!!!!");
-	//usleep(100000);
-	//exit(0);
-	//TODO: data race with child process
-	//this->_refresh_regs();
-
-	//usleep(1000);
-	//this->cont();
-
-
-	//this->wait();
-	//t_reg *regs = (t_reg *) (&this->_regs);
-	//for (int i =0 ; i < 28; i++) {
-	//	printf("reg %d : 0x%016x\n", i, (unsigned)regs[i]);
-	//}
-	//printf("start PC: %16llux\n", this->get_pc());
 }
 
 Debugee::~Debugee(void) {
-	ptrace(PTRACE_DETACH, this->get_pid(), 0, 0);
+	ptrace(PTRACE_DETACH, this->get_pid(), 0, 0, 0);
 }
 
 Debugee::Debugee(const Debugee &old)
@@ -66,22 +41,29 @@ Debugee	&Debugee::operator=(const Debugee &right) {
 }
 
 void	Debugee::cont(void) {
+	assert(this->_paused);
 	if (ptrace(PTRACE_CONT, this->get_pid(), 0, 0) < 0) {
 		std::cerr << "Error Debugee::cont(): PTRACE_CONT failed"
 			<< std::endl;
 		assert(0);
 	}
+	ERRNO_CHECK;
+	this->_paused = false;
 }
 
 void	Debugee::step(void) {
+	assert(this->_paused);
 	if (ptrace(PTRACE_SINGLESTEP, this->get_pid(), 0, 0) < 0) {
 		std::cerr << "Error Debugee::step(): PTRACE_SINGLESTEP failed"
 			<< std::endl;
 		assert(0);
 	}
+	ERRNO_CHECK;
+	this->_paused = false;
 }
 
 void	Debugee::_refresh_regs(void) {
+	assert(this->_paused);
 	if (ptrace(PTRACE_GETREGS, this->get_pid(), 0, &this->_regs) < 0) {
 		std::cerr << "Error Debugee::_refresh_regs(): PTRACE_GETREGS failed"
 			<< std::endl;
@@ -90,11 +72,13 @@ void	Debugee::_refresh_regs(void) {
 }
 
 t_program_ptr	Debugee::get_pc(void) {
+	assert(this->_paused);
 	this->_refresh_regs();
 	return ((t_program_ptr)this->_regs.rip);
 }
 
 void	Debugee::set_pc(t_reg new_pc) {
+	assert(this->_paused);
 	this->_refresh_regs();
 	this->_regs.rip = new_pc;
 	if (ptrace(PTRACE_SETREGS, this->get_pid(), 0, &this->_regs) < 0) {
@@ -106,15 +90,22 @@ void	Debugee::set_pc(t_reg new_pc) {
 
 // todo: mange breakpoints in class
 Breakpoint	*Debugee::new_bp(t_program_ptr address) {
+	assert(this->_paused);
 	return (Breakpoint::new_bp(address, *this));
 }
 
 t_word	Debugee::get_word(t_program_ptr address) {
 	t_word	word;
 
+	assert(this->_paused);
 	ERRNO_CHECK;
 	errno = 0;
-	word = ptrace(PTRACE_PEEKTEXT, this->get_pid(), address, 0);
+	long	bytes = ptrace(PTRACE_PEEKTEXT, this->get_pid(), address, 0);
+	uint8_t	b1 = bytes & 0xff;
+	uint8_t	b2 = bytes & 0xff00;
+	(void)b1;
+	(void)b2;
+	word = bytes;
 	if (errno) {
 		std::cerr << "Error Debugee::get_word(): PEEKTEXT failed: "
 			<< strerror(errno) << std::endl;
@@ -124,6 +115,7 @@ t_word	Debugee::get_word(t_program_ptr address) {
 }
 
 void	Debugee::set_word(t_program_ptr address, t_word word) {
+	assert(this->_paused);
 	PRINT_YELLOW("at " << std::hex << address << ": replacing" << this->get_word(address) << " with " << word);
 	if (ptrace(PTRACE_POKETEXT, this->get_pid(), address, word) < 0) {
 		std::cerr << "Error Debugee::set_word(): PTRACE_POKETEXT failed"
@@ -159,11 +151,21 @@ void	Debugee::wait(void) {
 	int	status;
 
 	waitpid(this->get_pid(), &status, 0);
+	if (WIFSTOPPED(status)) {
+		this->_paused = true;
+		this->_last_sig = WSTOPSIG(status);
+#ifndef NODEBUG
+		PRINT_YELLOW("Child paused duo to sig " << strsignal(this->_last_sig));
+#endif //NODEBUG
+	} else {
+		this->_paused = false;
+	}
 	if (!WIFSIGNALED(status) && WIFEXITED(status)) {
 		this->_finished = true;
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == 11) {
 		PRINT_RED("CHILD SEGFAULTED");
 		this->_finished = true;
+		this->_last_sig = 11;
 	}
 	wait_print_exit_status(status);
 	ERRNO_CHECK;
