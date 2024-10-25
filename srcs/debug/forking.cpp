@@ -19,17 +19,17 @@ void print_exit_status(int status) {
 void	setup_first_breakpoint(Debugee &debugee) {
 	ERRNO_CHECK;
 
-	//printf("inserting breakpoint \n");
-
 	//debugee.step();
 	//debugee.cont();
-	debugee.wait();
 
 
 	t_program_ptr pc = debugee.get_pc();
 	//pc = 0x000000003fa8;
 	//pc += 0x12a;
 	//pc = 0x7ffff7847a1e;
+	//pc = 140737346913652;
+	//pc += 106;
+	printf("enserting breakpoint \n");
 	bp = debugee.new_bp(pc);
 
 	//ERRNO_CHECK;
@@ -58,10 +58,5 @@ void	fork_process(t_debugger *debugger, char **av, char **env) {
 	ERRNO_CHECK;
 
 	Debugee debugee(av[1], av + 1, env);
-	printf("after first waitpid\n");
-	ERRNO_CHECK;
-	printf("after second waitpid\n");
-	ERRNO_CHECK;
-
 	setup_first_breakpoint(debugee);
 }

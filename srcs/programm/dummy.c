@@ -14,6 +14,7 @@ void	setup_sigtrap(void) {
 	sigact.sa_flags = SA_SIGINFO;
 	assert(sigaction(SIGTRAP, &sigact, NULL) != -1);
 }
+
 int	main(void) {
 	//setup_sigtrap();
 	//BASIC_BREAK;

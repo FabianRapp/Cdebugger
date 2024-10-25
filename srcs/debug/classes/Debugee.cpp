@@ -14,17 +14,25 @@ Debugee::Debugee(char *path, char **av, char **env)
 		ERRNO_CHECK;
 		PRINT_YELLOW("CHILD: ptrace(PTRACE_TRACEME)");
 		long ret = ptrace(PTRACE_TRACEME, 0, NULL, NULL, 0);
-		printf("ret: %ld\n", ret);
+		assert(ret == 0);
 		ERRNO_CHECK;
 		PRINT_YELLOW("CHILD: going into execve " << path);
 		execve(path, av, env);//causes a sigtrap so the parent can catch up
 		assert(0 && "execve failed");
 	}
-
 	/* if both the child call TRACEME and the parent call ATTACH one will fail:
 	ptrace(PTRACE_ATTACH, this->_pid, 0, 0, 0); */
 	std::cout << "debugging " << path << " with pid " << this->_pid << std::endl;
-	usleep(100000);
+	this->wait();//wait for execve call from child
+	PRINT_GREEN("PARENT: child called execve");
+	//while (!this->_finished) {
+	//	ptrace(PTRACE_SYSCALL, this->_pid, 0, 0);
+	//	this->wait();
+	//	PRINT_YELLOW(this->get_pc());
+	//	usleep(100000);
+	//}
+	ERRNO_CHECK;
+	
 }
 
 Debugee::~Debugee(void) {
@@ -100,6 +108,7 @@ t_word	Debugee::get_word(t_program_ptr address) {
 	assert(this->_paused);
 	ERRNO_CHECK;
 	errno = 0;
+	std::cout << "bp address: " << std::hex << address << std::endl;
 	long	bytes = ptrace(PTRACE_PEEKTEXT, this->get_pid(), address, 0);
 	uint8_t	b1 = bytes & 0xff;
 	uint8_t	b2 = bytes & 0xff00;
@@ -155,7 +164,7 @@ void	Debugee::wait(void) {
 		this->_paused = true;
 		this->_last_sig = WSTOPSIG(status);
 #ifndef NODEBUG
-		PRINT_YELLOW("Child paused duo to sig " << strsignal(this->_last_sig));
+		PRINT_YELLOW("PARENT: child paused duo to sig " << strsignal(this->_last_sig));
 #endif //NODEBUG
 	} else {
 		this->_paused = false;
