@@ -8,10 +8,13 @@
 # include <sys/user.h>
 # include <cassert>
 # include <iostream>
+# include <fstream>
 # include <string>
 # include <cstring>
 # include <sys/wait.h>
 # include <sys/personality.h>
+# include <string>
+# include <MemMaps.hpp>
 
 # include <macros.h>
 
@@ -54,10 +57,13 @@ class Debugee {
 private:
 		pid_t					_pid;
 		void					_refresh_regs(void);
+		void					_parse_maps(void);
 		struct user_regs_struct	_regs;
 		bool					_finished;
 		bool					_paused;
 		int						_last_sig;
+		std::string				_name;
+		MemMaps					_memmaps;
 public:
 								Debugee(void) = delete;
 								Debugee(char *path, char **av, char **env);
@@ -78,6 +84,7 @@ public:
 		bool					blocked(void);
 		void					dump_regs(void);
 		void					set_reg(t_reg_index idx, unsigned long long val);
+		void					read_data(t_program_ptr address, void *buffer, size_t len);
 };
 
 #endif //DEBUGEE_HPP

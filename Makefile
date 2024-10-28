@@ -16,6 +16,7 @@ SRCS := srcs/debug/debugger.cpp \
 		srcs/debug/debug_debugger.cpp \
 		srcs/debug/classes/Breakpoint.cpp \
 		srcs/debug/classes/Debugee.cpp \
+		srcs/debug/classes/MemMaps.cpp \
 
 
 

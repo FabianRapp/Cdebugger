@@ -3,9 +3,9 @@
 
 //******************BELOW ORDER MATTERS*******************
 # include <stdio.h>
-# ifndef __USE_GNU
-#  define __USE_GNU
-# endif // __USE_GNU
+//# ifndef __USE_GNU
+//#  define __USE_GNU
+//# endif // __USE_GNU
 //******************ABOVE ORDER MATTERS*******************
 # include <signal.h>
 # include <sys/ucontext.h>

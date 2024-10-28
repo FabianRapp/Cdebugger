@@ -37,6 +37,7 @@ int	main(void) {
 	while (1)
 	{
 		write(1, str, strlen(str));
+		usleep(100000);
 		i++;
 		i%= 10;
 	}

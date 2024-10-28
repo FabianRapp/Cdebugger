@@ -1,9 +1,9 @@
 #ifndef TYPES_HPP
 # define TYPES_HPP
 
-# ifndef __USE_GNU
-#  define __USE_GNU
-# endif // __USE_GNU
+//# ifndef __USE_GNU
+//#  define __USE_GNU
+//# endif // __USE_GNU
 
 # include <cstdlib>
 # include <stdint.h>

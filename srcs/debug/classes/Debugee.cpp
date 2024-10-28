@@ -2,12 +2,19 @@
 
 //long ptrace(enum __ptrace_request op, pid_t pid, void *addr, void *data);
 
+void	Debugee::_parse_maps(void) {
+	std::string	path = "/proc/" + std::to_string(this->_pid) + "/maps";
+
+
+}
+
 pid_t	Debugee::get_pid(void) const {
 return (this->_pid);
 }
 
 Debugee::Debugee(char *path, char **av, char **env)
-: _pid(fork()), _finished(false), _paused(false) {
+: _pid(fork()), _finished(false), _paused(false), _name(path),
+  _memmaps(_pid) {
 	assert("fork failed" && this->get_pid() >= 0);
 	if (this->_pid == 0) {
 		personality(ADDR_NO_RANDOMIZE);
@@ -19,6 +26,9 @@ Debugee::Debugee(char *path, char **av, char **env)
 		PRINT_YELLOW("CHILD: going into execve " << path);
 		execve(path, av, env);//causes a sigtrap so the parent can catch up
 		assert(0 && "execve failed");
+	}
+	if (this->_name[0] == '.') {
+		this->_name.erase(0, 2);
 	}
 	/* if both the child call TRACEME and the parent call ATTACH one will fail:
 	ptrace(PTRACE_ATTACH, this->_pid, 0, 0, 0); */
@@ -36,7 +46,18 @@ Debugee::Debugee(char *path, char **av, char **env)
 }
 
 Debugee::Debugee(pid_t pid)
- : _pid(pid) {
+ : _pid(pid), _memmaps(pid) {
+	std::string	cmdline_path = "/proc/" + std::to_string(pid) + "/cmdline";
+
+	std::ifstream	cmdline_file(cmdline_path);
+	assert(cmdline_file.is_open());
+	std::string		line;
+	getline(cmdline_file, line);
+	cmdline_file.close();
+	if (line[0] == '.') {
+		line.erase(0, 2);
+	}
+	this->_name = line;
 	ERRNO_CHECK;
 	printf("pid: %d\n", pid);
 	ptrace(PTRACE_ATTACH, pid, 0, 0);
@@ -54,7 +75,7 @@ Debugee::~Debugee(void) {
 }
 
 Debugee::Debugee(const Debugee &old)
-	: _pid(old._pid) {
+	: _pid(old._pid), _memmaps(old._pid) {
 }
 
 Debugee	&Debugee::operator=(const Debugee &right) {
@@ -289,5 +310,31 @@ void	Debugee::dump_regs(void) {
 	for (int i = 0; i < REGS_COUNT; i++) {
 		std::cout << reg_to_str((t_reg_index) i) << ": "
 			<< ((unsigned long long *)(&(this->_regs)))[i] << std::endl;
+	}
+}
+/*
+#include <sys/uio.h>
+extern ssize_t process_vm_readv (pid_t __pid, const struct iovec *__lvec,
+				 unsigned long int __liovcnt,
+				 const struct iovec *__rvec,
+				 unsigned long int __riovcnt,
+				 unsigned long int __flags)
+  __THROW;
+*/
+//todo: verifiy this
+void	Debugee::read_data(t_program_ptr address, void *buffer, size_t len) {
+	size_t		i = 0;
+	t_word	cur_word;
+
+	//while (i < len)
+	{
+		//cur_word = this->get_word(address + i);
+		cur_word = ptrace(PTRACE_PEEKTEXT, this->_pid, address + i, NULL);
+		size_t	word_idx = 0;
+		//while (word_idx < sizeof (t_word) && i < len)
+		{
+			ERRNO_CHECK;
+			((uint8_t *)buffer)[i++] = ((uint8_t *)(&cur_word))[word_idx++];
+		}
 	}
 }

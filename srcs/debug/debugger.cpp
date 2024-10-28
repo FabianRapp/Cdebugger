@@ -120,6 +120,8 @@ int main(int ac, char *av[], char *env[]) {
 	while (1) {
 		breakpoint_handler(*debugger.debugee);
 		debugger.debugee->wait();
+		uint8_t	buf[10];
+		debugger.debugee->read_data(0x08048000, buf, sizeof buf);
 	}
 	//int status;
 	//waitpid(debugger.pid,&status, 0);
