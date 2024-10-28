@@ -8,6 +8,7 @@
 # include <sstream>
 # include <cassert>
 # include <vector>
+# include <macros.h>
 
 typedef struct s_range {
 	size_t		start;

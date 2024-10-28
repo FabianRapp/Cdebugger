@@ -69,18 +69,17 @@ static void	parse_path(t_range &cur, std::string &entry, std::ifstream &file,
 }
 
 MemMaps::MemMaps(pid_t pid) {
-	std::string		path = "/proc/" + std::to_string(pid) + "/maps";
-	std::ifstream	file(path);
 	if (!pid)
 		return ;
+	std::string		path = "/proc/" + std::to_string(pid) + "/maps";
+	std::ifstream	file(path);
 	assert(pid > 0);
-
 	assert(file.is_open());
 
 	while (!file.eof()) {
 		t_range	cur;
 	
-		for (int i = 0; i < 6; i++) {
+		for (int col = 0; col < 6; col++) {
 			std::string	entry;
 			std::streampos	old_pos = file.tellg();
 			if (!(file >> entry)) {
@@ -88,10 +87,10 @@ MemMaps::MemMaps(pid_t pid) {
 			}
 			// todo: wtf is this
 			if (entry == "(deleted)") {
-				i--;
+				col--;
 				continue ;
 			}
-			switch (i) {
+			switch (col) {
 				case(0): {
 					parse_range(cur, entry);
 					break ;
@@ -118,6 +117,7 @@ MemMaps::MemMaps(pid_t pid) {
 		this->ranges.push_back(cur);
 	}
 	file.close();
+	ERRNO_CHECK;
 }
 
 MemMaps::~MemMaps(void) {

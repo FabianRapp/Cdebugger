@@ -1,5 +1,6 @@
 #ifndef MACROS_H
 # define MACROS_H
+# include <string.h>
 
 # ifndef	PRINT_RED
 #  define PRINT_RED(content) std::cout << "\033[31m" << content << "\033[0m" << std::endl;
