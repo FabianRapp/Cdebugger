@@ -15,6 +15,40 @@
 
 # include <macros.h>
 
+typedef enum e_reg_index {
+	R15 = 0,
+	R14,
+	R13,
+	R12,
+	RBP,
+	RBX,
+	R11,
+	R10,
+	R9,
+	R8,
+	RAX,
+	RCX,
+	RDX,
+	RSI,
+	RDI,
+	ORIG_RAX,
+	RIP,
+	CS,
+	EFLAGS,
+	RSP,
+	SS,
+	FS_BASE,
+	GS_BASE,
+	DS,
+	ES,
+	FS,
+	GS,
+	REGS_COUNT
+} t_reg_index;
+
+const char	*reg_to_str(t_reg_index reg);
+t_reg_index	str_to_reg(char *str);
+
 //todo: does constructor need options for PTRACE_ATTACH?
 class Debugee {
 private:
@@ -27,6 +61,7 @@ private:
 public:
 								Debugee(void) = delete;
 								Debugee(char *path, char **av, char **env);
+								Debugee(pid_t pid);
 								Debugee(const Debugee &old);
 		Debugee					&operator=(const Debugee &right);
 								~Debugee(void);
@@ -41,6 +76,8 @@ public:
 		void					wait(void);
 		bool					finished(void);
 		bool					blocked(void);
+		void					dump_regs(void);
+		void					set_reg(t_reg_index idx, unsigned long long val);
 };
 
 #endif //DEBUGEE_HPP

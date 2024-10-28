@@ -57,6 +57,6 @@ void	setup_first_breakpoint(Debugee &debugee) {
 void	fork_process(t_debugger *debugger, char **av, char **env) {
 	ERRNO_CHECK;
 
-	Debugee debugee(av[1], av + 1, env);
-	setup_first_breakpoint(debugee);
+	debugger->debugee = new Debugee(av[1], av + 1, env);
+	setup_first_breakpoint(*debugger->debugee);
 }

@@ -16,6 +16,7 @@ void	setup_sigtrap(void) {
 }
 */
 #include <unistd.h>
+#include <string.h>
 int	my_strlen(char *str) {
 	int i = 0;
 	while (str[i]) {
@@ -27,14 +28,15 @@ int	my_strlen(char *str) {
 int	main(void) {
 	//setup_sigtrap();
 	//BASIC_BREAK;
+
 	char	hello[] = "Hello from programm\n";
 	write (1, hello, my_strlen(hello));
 	int		i = 0;
-	//while (1)
+	char	str[16] = {0};
+	strcpy(str, "hi\n");
+	while (1)
 	{
-		char c = i + '0';
-		write(1, &c, 1);
-		write(1, "\n", 1);
+		write(1, str, strlen(str));
 		i++;
 		i%= 10;
 	}

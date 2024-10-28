@@ -1,8 +1,10 @@
 #include <debugger.hpp>
+#include <Debugee.hpp>
 
 uint8_t		*replaced_program_location;
 uint64_t	replaced_word;
 
+t_debugger	debugger;
 // return the removed instruction byte
 void	insert_breakpoint_here(uint8_t *program, t_debugger *debugger) {
 	{
@@ -45,15 +47,44 @@ void	breakpoint_init_print(void) {
 //	assert(sigaction(SIGTRAP, &sigact, NULL) != -1);
 //}
 
+void	signal_handler_ctrl_c(int sig) {
+	(void)sig;
+	char	*input = NULL;
+	printf("'EXIT' or ctrl+d to exit\n");
+	input = readline("INPUT: ");
+	if (!input || !strncmp(input, "EXIT", strlen("EXIT"))) {
+		exit(0);
+	}
+	if (!strcmp(input, "p") || !strcmp(input, "pause")) {
+		printf("pause!\n");
+		kill(debugger.debugee->get_pid(), SIGTRAP);
+	}
+	free(input);
+}
+
+void	set_ctrl_c(void)
+{
+	struct sigaction	sig;
+
+	sigemptyset(&(sig.sa_mask));
+	sig.sa_flags = 0;
+	sig.sa_handler = signal_handler_ctrl_c;
+	if (sigaction(SIGINT, &sig, NULL) == -1)
+		assert(0);
+}
 t_debugger	init(int ac, char **av, char **env) {
-
-	t_debugger	debugger;
-
 	test_op_len();
 	assert("need 1 argument: executable" && ac > 1);
 	debugger.page_size = sysconf(_SC_PAGESIZE);
+	set_ctrl_c();
+	if (ac == 2)
+		fork_process(&debugger, av, env);
+	else if (ac == 3) {
+		debugger.debugee = new Debugee((pid_t)atoi(av[1]));
+	} else {
+		assert("invlaid ac" && 0);
+	}
 	//breakpoint_init_print();
-	fork_process(&debugger, av, env);
 	return (debugger);
 }
 
@@ -66,6 +97,7 @@ int	(*alloc_dummy_fn(t_debugger debugger))(void) {
 	memcpy(buf, code, sizeof(code));
 	return ((int (*)(void))buf);
 }
+
 
 void	old_test(t_debugger *debugger) {
 	int	(*fn)(void);
@@ -82,10 +114,16 @@ void	old_test(t_debugger *debugger) {
 
 
 int main(int ac, char *av[], char *env[]) {
-	t_debugger	debugger = init(ac, av, env);
+	debugger = init(ac, av, env);
+	//debugger.debugee->cont();
+	printf("entering main loop\n");
+	while (1) {
+		breakpoint_handler(*debugger.debugee);
+		debugger.debugee->wait();
+	}
 	//int status;
 	//waitpid(debugger.pid,&status, 0);
-	(void)debugger;
+	delete debugger.debugee;
 	return 0;
 }
 

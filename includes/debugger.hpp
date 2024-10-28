@@ -1,5 +1,5 @@
-#ifndef DEBUGGER_H
-# define DEBUGGER_H
+#ifndef DEBUGGER1_H
+# define DEBUGGER1_H
 
 //******************BELOW ORDER MATTERS*******************
 # include <stdio.h>
@@ -44,6 +44,7 @@ typedef struct s_debugger {
 	pid_t					pid;
 	struct user_regs_struct	regs;
 }	t_debugger;
+extern t_debugger	debugger;
 
 void	insert_breakpoint_here(uint8_t *program, t_debugger *debugger);
 //void	int3_sig_handler(int sig, siginfo_t *info, void *context);
@@ -59,4 +60,4 @@ void	update_regs(t_debugger *debugger);
 void	check_child_status(pid_t child_pid);
 
 void	remove_cur_breakpoint(t_debugger *debugger);
-#endif //DEBUGGER_H
+#endif //DEBUGGER1_H

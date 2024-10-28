@@ -35,6 +35,20 @@ Debugee::Debugee(char *path, char **av, char **env)
 	
 }
 
+Debugee::Debugee(pid_t pid)
+ : _pid(pid) {
+	ERRNO_CHECK;
+	printf("pid: %d\n", pid);
+	ptrace(PTRACE_ATTACH, pid, 0, 0);
+	//kill(pid, SIGTRAP);
+	ERRNO_CHECK;
+	int stat;
+	waitpid(pid, &stat, 0);
+	this->_paused = true;
+	ERRNO_CHECK;
+	PRINT_GREEN("Debugging " << pid);
+}
+
 Debugee::~Debugee(void) {
 	ptrace(PTRACE_DETACH, this->get_pid(), 0, 0, 0);
 }
@@ -109,6 +123,7 @@ t_word	Debugee::get_word(t_program_ptr address) {
 	ERRNO_CHECK;
 	errno = 0;
 	std::cout << "bp address: " << std::hex << address << std::endl;
+
 	long	bytes = ptrace(PTRACE_PEEKTEXT, this->get_pid(), address, 0);
 	uint8_t	b1 = bytes & 0xff;
 	uint8_t	b2 = bytes & 0xff00;
@@ -126,6 +141,7 @@ t_word	Debugee::get_word(t_program_ptr address) {
 void	Debugee::set_word(t_program_ptr address, t_word word) {
 	assert(this->_paused);
 	PRINT_YELLOW("at " << std::hex << address << ": replacing" << this->get_word(address) << " with " << word);
+
 	if (ptrace(PTRACE_POKETEXT, this->get_pid(), address, word) < 0) {
 		std::cerr << "Error Debugee::set_word(): PTRACE_POKETEXT failed"
 			<< std::endl;
@@ -194,3 +210,84 @@ bool	Debugee::blocked() {
 	return (false);
 }
 
+t_reg_index	str_to_reg(char *str) {
+    if (strcmp(str, "R15") == 0)       return R15;
+    else if (strcmp(str, "R14") == 0)  return R14;
+    else if (strcmp(str, "R13") == 0)  return R13;
+    else if (strcmp(str, "R12") == 0)  return R12;
+    else if (strcmp(str, "RBP") == 0)  return RBP;
+    else if (strcmp(str, "RBX") == 0)  return RBX;
+    else if (strcmp(str, "R11") == 0)  return R11;
+    else if (strcmp(str, "R10") == 0)  return R10;
+    else if (strcmp(str, "R9") == 0)   return R9;
+    else if (strcmp(str, "R8") == 0)   return R8;
+    else if (strcmp(str, "RAX") == 0)  return RAX;
+    else if (strcmp(str, "RCX") == 0)  return RCX;
+    else if (strcmp(str, "RDX") == 0)  return RDX;
+    else if (strcmp(str, "RSI") == 0)  return RSI;
+    else if (strcmp(str, "RDI") == 0)  return RDI;
+    else if (strcmp(str, "ORIG_RAX") == 0) return ORIG_RAX;
+    else if (strcmp(str, "RIP") == 0)  return RIP;
+    else if (strcmp(str, "CS") == 0)   return CS;
+    else if (strcmp(str, "EFLAGS") == 0) return EFLAGS;
+    else if (strcmp(str, "RSP") == 0)  return RSP;
+    else if (strcmp(str, "SS") == 0)   return SS;
+    else if (strcmp(str, "FS_BASE") == 0) return FS_BASE;
+    else if (strcmp(str, "GS_BASE") == 0) return GS_BASE;
+    else if (strcmp(str, "DS") == 0)   return DS;
+    else if (strcmp(str, "ES") == 0)   return ES;
+    else if (strcmp(str, "FS") == 0)   return FS;
+    else if (strcmp(str, "GS") == 0)   return GS;
+    else return REGS_COUNT;
+}
+
+const char	*reg_to_str(t_reg_index reg) {
+	switch (reg) {
+		case R15:	   return "R15";
+		case R14:	   return "R14";
+		case R13:	   return "R13";
+		case R12:	   return "R12";
+		case RBP:	   return "RBP";
+		case RBX:	   return "RBX";
+		case R11:	   return "R11";
+		case R10:	   return "R10";
+		case R9:		return "R9";
+		case R8:		return "R8";
+		case RAX:	   return "RAX";
+		case RCX:	   return "RCX";
+		case RDX:	   return "RDX";
+		case RSI:	   return "RSI";
+		case RDI:	   return "RDI";
+		case ORIG_RAX:  return "ORIG_RAX";
+		case RIP:	   return "RIP";
+		case CS:		return "CS";
+		case EFLAGS:	return "EFLAGS";
+		case RSP:	   return "RSP";
+		case SS:		return "SS";
+		case FS_BASE:   return "FS_BASE";
+		case GS_BASE:   return "GS_BASE";
+		case DS:		return "DS";
+		case ES:		return "ES";
+		case FS:		return "FS";
+		case GS:		return "GS";
+		case REGS_COUNT:return "REGS_COUNT";
+		default:		return "UNKNOWN";
+	}
+}
+
+void	Debugee::set_reg(t_reg_index idx, unsigned long long val) {
+	this->_refresh_regs();
+	std::cout << "set reg " << reg_to_str(idx) << " to " << val << std::endl;
+	((unsigned long long *)&this->_regs)[idx] = val;
+	ptrace(PTRACE_SETREGS, this->_pid, 0, &this->_regs);
+	this->_refresh_regs();
+	ERRNO_CHECK;
+}
+
+void	Debugee::dump_regs(void) {
+	this->_refresh_regs();
+	for (int i = 0; i < REGS_COUNT; i++) {
+		std::cout << reg_to_str((t_reg_index) i) << ": "
+			<< ((unsigned long long *)(&(this->_regs)))[i] << std::endl;
+	}
+}

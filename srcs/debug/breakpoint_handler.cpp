@@ -1,4 +1,5 @@
 #include <debugger.hpp>
+#include <Debugee.hpp>
 
 void	remove_cur_breakpoint(t_debugger *debugger) {
 	assert(ptrace(PTRACE_GETREGS, debugger->pid, 0, &debugger->regs) >= 0);
@@ -34,13 +35,15 @@ bool	handle_input(Debugee &debugee, char *line) {
 		debugee.cont();
 		return (false);
 	} else if (!strncmp(line, "REGS", strlen("REGS"))) {
-		printf("not active\n");
-		//printf("PC: %lld, RAX: %lld, RBX: %lld, RCX: %lld, RDX: %lld\n",
-		//	context->uc_mcontext.gregs[REG_RIP] - 1,
-		//	context->uc_mcontext.gregs[REG_RAX],
-		//	context->uc_mcontext.gregs[REG_RBX],
-		//	context->uc_mcontext.gregs[REG_RCX],
-		//	context->uc_mcontext.gregs[REG_RDX]);
+		debugee.dump_regs();
+	} else if (!strncmp(line, "SET REG", strlen("SET REG"))) {
+		char	*index_str = readline("Which reg(call caps):");
+		char	*new_val_str = readline("Value:");
+		t_reg_index idx = str_to_reg(index_str);
+		unsigned long long	val = atoi(new_val_str);
+		debugee.set_reg(idx, val);
+		free(index_str);
+		free(new_val_str);
 	} else if (!strncmp(line, "n", 1)
 	    || !strncmp(line, "next", strlen("next"))) {
 		t_word	cur_word = debugee.get_word(debugee.get_pc());
@@ -84,23 +87,6 @@ bool	handle_input(Debugee &debugee, char *line) {
 void	breakpoint_handler(Debugee &debugee) {
 	PRINT_GREEN("PC at " << std::hex << debugee.get_pc());
 	PRINT_GREEN("cur word at bp: " << std::hex << debugee.get_word(debugee.get_pc()));
-	//	t_word	cur_word = debugee.get_word(debugee.get_pc());
-	//	if ((cur_word & 0xFF) == 0xCC) {
-	//		PRINT_GREEN("next steped into breakpoint");
-	//		assert(bp->get_pos() == debugee.get_pc());
-	//		debugee.set_pc(bp->get_pos());
-	//		delete bp;
-	//		bp = 0;
-	//	}
-	//	debugee.step();
-	//	//usleep(100);
-	//return ;
-
-
-
-
-
-
 	char	*line = readline("debugger(): ");
 	while (line) {
 		add_history(line);//history leaking rn on exit
