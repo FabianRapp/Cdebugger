@@ -37,6 +37,7 @@ void	signal_handler_ctrl_c(int sig, siginfo_t *info, void *vcontext) {
 	}
 	free(input);
 	//sig_handler_flag = 1;
+	(void)context;
 	(void)sig;
 	(void)info;
 }
@@ -59,19 +60,8 @@ void	set_signals(void) {
 	bzero(&tmp_blocked_sigs, sizeof tmp_blocked_sigs);
 }
 
-void	ignore_sig(int sig) {
-	struct sigaction	sig_act;
-
-	bzero(&sig_act, sizeof sig_act);
-	sigemptyset(&sig_act.sa_mask);
-	if (sigaction(sig, &sig_act, NULL) == -1)
-		assert(0);
-}
-
-
 // only for defined singlas, rather than all
 void	block_signals(void) {
-	//ignore_sig(SIGINT);
 	sigprocmask(SIG_BLOCK, &tmp_blocked_sigs, NULL);
 }
 
@@ -82,11 +72,12 @@ void	unblock_signals(void) {
 
 t_debugger	init(int ac, char **av, char **env) {
 	test_op_len();
+	bzero(&debugger, sizeof debugger);
 	assert("need atleast 1 argument: <executable> or <pid + anything>" && ac > 1);
 	debugger.page_size = sysconf(_SC_PAGESIZE);
 	set_signals();
 	if (ac == 2)
-		fork_process(&debugger, av, env);
+		debugger.debugee = new Debugee(av[1], av + 1, env);
 	else if (ac == 3) {
 		debugger.debugee = new Debugee((pid_t)atoi(av[1]));
 	} else {
@@ -124,6 +115,6 @@ int main(int ac, char *av[], char *env[]) {
 	//int status;
 	//waitpid(debugger.pid,&status, 0);
 	//delete debugger.debugee;
-	return 0;
+	return (0);
 }
 
