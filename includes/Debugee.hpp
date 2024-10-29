@@ -49,6 +49,7 @@ typedef enum e_reg_index {
 	REGS_COUNT
 } t_reg_index;
 
+
 const char	*reg_to_str(t_reg_index reg);
 t_reg_index	str_to_reg(char *str);
 
@@ -57,7 +58,6 @@ class Debugee {
 private:
 		pid_t					_pid;
 		void					_refresh_regs(void);
-		void					_parse_maps(void);
 		struct user_regs_struct	_regs;
 		bool					_finished;
 		bool					_paused;

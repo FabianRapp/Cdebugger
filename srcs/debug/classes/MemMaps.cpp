@@ -1,6 +1,6 @@
 #include <MemMaps.hpp>
 
-static void	parse_range(t_range &cur, std::string &entry) {
+void	MemMaps::_parse_range(t_range &cur, std::string &entry) {
 	std::stringstream	start;
 	start << std::hex << entry.substr(0, entry.find('-'));
 	start >> cur.start;
@@ -9,7 +9,7 @@ static void	parse_range(t_range &cur, std::string &entry) {
 	end >> cur.end;
 }
 
-static void	parse_permissions(t_range &cur, std::string &entry) {
+void	MemMaps::_parse_permissions(t_range &cur, std::string &entry) {
 	if (entry[0] == '-') {
 		cur.read = false;
 	} else {
@@ -36,13 +36,13 @@ static void	parse_permissions(t_range &cur, std::string &entry) {
 	}
 }
 
-static void	parse_offset(t_range &cur, std::string &entry) {
+void	MemMaps::_parse_offset(t_range &cur, std::string &entry) {
 	std::stringstream	offset;
 	offset << std::hex << entry;
 	offset >> cur.offset;
 }
 
-static void	parse_device(t_range &cur, std::string &entry) {
+void	MemMaps::_parse_device(t_range &cur, std::string &entry) {
 	std::stringstream	device_minor;
 	device_minor << std::hex << entry.substr(0, entry.find(':'));
 	device_minor >> cur.device_minor;
@@ -51,13 +51,13 @@ static void	parse_device(t_range &cur, std::string &entry) {
 	device_major >> cur.device_major;
 }
 
-static void	parse_inode(t_range &cur, std::string &entry) {
+void	MemMaps::_parse_inode(t_range &cur, std::string &entry) {
 	std::stringstream	inode;
 	inode << entry;
 	inode >> cur.inode;
 }
 
-static void	parse_path(t_range &cur, std::string &entry, std::ifstream &file,
+void	MemMaps::_parse_path(t_range &cur, std::string &entry, std::ifstream &file,
 	std::streampos &old_pos) {
 	// if no path entry
 	if (entry[0] != '/' && entry[0] != '[') {
@@ -92,29 +92,29 @@ MemMaps::MemMaps(pid_t pid) {
 			}
 			switch (col) {
 				case(0): {
-					parse_range(cur, entry);
+					this->_parse_range(cur, entry);
 					break ;
 				} case (1): {
-					parse_permissions(cur, entry);
+					this->_parse_permissions(cur, entry);
 					break ;
 				} case (2): {
-					parse_offset(cur, entry);
+					this->_parse_offset(cur, entry);
 					break ;
 				} case (3): {
-					parse_device(cur, entry);
+					this->_parse_device(cur, entry);
 					break ;
 				} case (4): {
-					parse_inode(cur, entry);
+					this->_parse_inode(cur, entry);
 					break ;
 				} case (5): {
-					parse_path(cur, entry, file, old_pos);
+					this->_parse_path(cur, entry, file, old_pos);
 					break ;
 				} default: {
 					assert(0);
 				}
 			}
 		}
-		this->ranges.push_back(cur);
+		this->_ranges.push_back(cur);
 	}
 	file.close();
 	ERRNO_CHECK;
@@ -123,3 +123,33 @@ MemMaps::MemMaps(pid_t pid) {
 MemMaps::~MemMaps(void) {
 }
 
+bool	MemMaps::_check_permission(unsigned long long address,
+	enum permission_type type) {
+	for (size_t i = 0; i < this->_ranges.size(); i++) {
+		if (address < this->_ranges[i].start || address >= this->_ranges[i].end)
+			continue ;
+		switch (type) {
+			case (PERMISSION_READ): return (this->_ranges[i].read);
+			case (PERMISSION_WRITE): return (this->_ranges[i].write);
+			case (PERMISSION_EXECUTE): return (this->_ranges[i].execute);
+			case (PERMISSION_SHARED): return (this->_ranges[i].shared);
+		}
+	}
+	return (false);
+}
+
+bool	MemMaps::is_readable(unsigned long long address) {
+	return (this->_check_permission(address, PERMISSION_READ));
+}
+
+bool	MemMaps::is_writeable(unsigned long long address) {
+	return (this->_check_permission(address, PERMISSION_WRITE));
+}
+
+bool	MemMaps::is_executable(unsigned long long address) {
+	return (this->_check_permission(address, PERMISSION_EXECUTE));
+}
+
+bool	MemMaps::is_shared(unsigned long long address) {
+	return (this->_check_permission(address, PERMISSION_SHARED));
+}

@@ -74,7 +74,7 @@ void	set_ctrl_c(void)
 }
 t_debugger	init(int ac, char **av, char **env) {
 	test_op_len();
-	assert("need 1 argument: executable" && ac > 1);
+	assert("need atleast 1 argument: <executable> or <pid + anything>" && ac > 1);
 	debugger.page_size = sysconf(_SC_PAGESIZE);
 	set_ctrl_c();
 	if (ac == 2)
@@ -87,31 +87,6 @@ t_debugger	init(int ac, char **av, char **env) {
 	//breakpoint_init_print();
 	return (debugger);
 }
-
-int	(*alloc_dummy_fn(t_debugger debugger))(void) {
-	//						|mov eax, 1						|noop		|ret
-	unsigned char code[] = {0xB8, 0x01, 0x00, 0x00, 0x00,	NOP_OPCODE, 0xC3};
-	void *buf;
-	posix_memalign(&buf, debugger.page_size, debugger.page_size);
-	mprotect(buf, debugger.page_size, PROT_READ | PROT_WRITE | PROT_EXEC);
-	memcpy(buf, code, sizeof(code));
-	return ((int (*)(void))buf);
-}
-
-
-void	old_test(t_debugger *debugger) {
-	int	(*fn)(void);
-	int	result;
-
-	fn = alloc_dummy_fn(*debugger);
-	result = fn();
-	printf("Result of the machine code: %d\n", result);
-	insert_breakpoint_here((uint8_t *)fn, debugger);
-	result = fn();
-	printf("Result of the machine code: %d\n", result);
-	free((void *)fn);
-}
-
 
 int main(int ac, char *av[], char *env[]) {
 	debugger = init(ac, av, env);

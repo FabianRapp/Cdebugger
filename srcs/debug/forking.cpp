@@ -2,20 +2,6 @@
 
 Breakpoint	*bp = NULL;
 
-void print_exit_status(int status) {
-	if (WIFSIGNALED(status)) {
-		PRINT_YELLOW("Exited due to uncaught signal: " << WEXITSTATUS(status));
-	} else if (WIFEXITED(status)) {
-		PRINT_YELLOW("Exited normally with exit code " << WIFEXITED(status));
-	} else if (WIFSTOPPED(status)) {
-		PRINT_YELLOW("Stopped by signal: " << WSTOPSIG(status));
-	} else if (WIFCONTINUED(status)) {
-		PRINT_YELLOW("Continued");
-	} else {
-		PRINT_YELLOW("Exited with unknown status");
-	}
-}
-
 void	setup_first_breakpoint(Debugee &debugee) {
 	ERRNO_CHECK;
 

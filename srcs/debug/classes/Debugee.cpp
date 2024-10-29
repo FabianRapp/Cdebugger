@@ -2,19 +2,13 @@
 
 //long ptrace(enum __ptrace_request op, pid_t pid, void *addr, void *data);
 
-void	Debugee::_parse_maps(void) {
-	std::string	path = "/proc/" + std::to_string(this->_pid) + "/maps";
-
-
-}
-
 pid_t	Debugee::get_pid(void) const {
 return (this->_pid);
 }
 
 Debugee::Debugee(char *path, char **av, char **env)
 : _pid(fork()), _finished(false), _paused(false), _name(path),
-  _memmaps(_pid) {
+	_memmaps(_pid) {
 	assert("fork failed" && this->get_pid() >= 0);
 	if (this->_pid == 0) {
 		personality(ADDR_NO_RANDOMIZE);
@@ -35,12 +29,6 @@ Debugee::Debugee(char *path, char **av, char **env)
 	std::cout << "debugging " << path << " with pid " << this->_pid << std::endl;
 	this->wait();//wait for execve call from child
 	PRINT_GREEN("PARENT: child called execve");
-	//while (!this->_finished) {
-	//	ptrace(PTRACE_SYSCALL, this->_pid, 0, 0);
-	//	this->wait();
-	//	PRINT_YELLOW(this->get_pc());
-	//	usleep(100000);
-	//}
 	ERRNO_CHECK;
 	
 }
@@ -160,7 +148,8 @@ t_word	Debugee::get_word(t_program_ptr address) {
 
 void	Debugee::set_word(t_program_ptr address, t_word word) {
 	assert(this->_paused);
-	PRINT_YELLOW("at " << std::hex << address << ": replacing" << this->get_word(address) << " with " << word);
+	PRINT_YELLOW("at " << std::hex << address << ": replacing"
+		<< this->get_word(address) << " with " << word);
 
 	if (ptrace(PTRACE_POKETEXT, this->get_pid(), address, word) < 0) {
 		std::cerr << "Error Debugee::set_word(): PTRACE_POKETEXT failed"
@@ -183,7 +172,8 @@ void wait_print_exit_status(int status) {
 		} else if (sig == 19) {
 			PRINT_RED("waited proces had sig continue (19)");
 		} else {
-			PRINT_YELLOW("Stopped by signal: " << strsignal(sig) << "(" << sig << ")");
+			PRINT_YELLOW("Stopped by signal: " << strsignal(sig) << "("
+				<< sig << ")");
 		}
 	} else if (WIFCONTINUED(status)) {
 		PRINT_YELLOW("Continued");
@@ -231,61 +221,61 @@ bool	Debugee::blocked() {
 }
 
 t_reg_index	str_to_reg(char *str) {
-    if (strcmp(str, "R15") == 0)       return R15;
-    else if (strcmp(str, "R14") == 0)  return R14;
-    else if (strcmp(str, "R13") == 0)  return R13;
-    else if (strcmp(str, "R12") == 0)  return R12;
-    else if (strcmp(str, "RBP") == 0)  return RBP;
-    else if (strcmp(str, "RBX") == 0)  return RBX;
-    else if (strcmp(str, "R11") == 0)  return R11;
-    else if (strcmp(str, "R10") == 0)  return R10;
-    else if (strcmp(str, "R9") == 0)   return R9;
-    else if (strcmp(str, "R8") == 0)   return R8;
-    else if (strcmp(str, "RAX") == 0)  return RAX;
-    else if (strcmp(str, "RCX") == 0)  return RCX;
-    else if (strcmp(str, "RDX") == 0)  return RDX;
-    else if (strcmp(str, "RSI") == 0)  return RSI;
-    else if (strcmp(str, "RDI") == 0)  return RDI;
-    else if (strcmp(str, "ORIG_RAX") == 0) return ORIG_RAX;
-    else if (strcmp(str, "RIP") == 0)  return RIP;
-    else if (strcmp(str, "CS") == 0)   return CS;
-    else if (strcmp(str, "EFLAGS") == 0) return EFLAGS;
-    else if (strcmp(str, "RSP") == 0)  return RSP;
-    else if (strcmp(str, "SS") == 0)   return SS;
-    else if (strcmp(str, "FS_BASE") == 0) return FS_BASE;
-    else if (strcmp(str, "GS_BASE") == 0) return GS_BASE;
-    else if (strcmp(str, "DS") == 0)   return DS;
-    else if (strcmp(str, "ES") == 0)   return ES;
-    else if (strcmp(str, "FS") == 0)   return FS;
-    else if (strcmp(str, "GS") == 0)   return GS;
-    else return REGS_COUNT;
+	if (strcmp(str, "R15") == 0)			return R15;
+	else if (strcmp(str, "R14") == 0)		return R14;
+	else if (strcmp(str, "R13") == 0)		return R13;
+	else if (strcmp(str, "R12") == 0)		return R12;
+	else if (strcmp(str, "RBP") == 0)		return RBP;
+	else if (strcmp(str, "RBX") == 0)		return RBX;
+	else if (strcmp(str, "R11") == 0)		return R11;
+	else if (strcmp(str, "R10") == 0)		return R10;
+	else if (strcmp(str, "R9") == 0)		return R9;
+	else if (strcmp(str, "R8") == 0)		return R8;
+	else if (strcmp(str, "RAX") == 0)		return RAX;
+	else if (strcmp(str, "RCX") == 0)		return RCX;
+	else if (strcmp(str, "RDX") == 0)		return RDX;
+	else if (strcmp(str, "RSI") == 0)		return RSI;
+	else if (strcmp(str, "RDI") == 0)		return RDI;
+	else if (strcmp(str, "ORIG_RAX") == 0)	return ORIG_RAX;
+	else if (strcmp(str, "RIP") == 0)		return RIP;
+	else if (strcmp(str, "CS") == 0)		return CS;
+	else if (strcmp(str, "EFLAGS") == 0)	return EFLAGS;
+	else if (strcmp(str, "RSP") == 0)		return RSP;
+	else if (strcmp(str, "SS") == 0)		return SS;
+	else if (strcmp(str, "FS_BASE") == 0)	return FS_BASE;
+	else if (strcmp(str, "GS_BASE") == 0) 	return GS_BASE;
+	else if (strcmp(str, "DS") == 0)		return DS;
+	else if (strcmp(str, "ES") == 0)		return ES;
+	else if (strcmp(str, "FS") == 0)		return FS;
+	else if (strcmp(str, "GS") == 0)		return GS;
+	else assert("invalid REG input" && 0);
 }
 
 const char	*reg_to_str(t_reg_index reg) {
 	switch (reg) {
-		case R15:	   return "R15";
-		case R14:	   return "R14";
-		case R13:	   return "R13";
-		case R12:	   return "R12";
-		case RBP:	   return "RBP";
-		case RBX:	   return "RBX";
-		case R11:	   return "R11";
-		case R10:	   return "R10";
+		case R15:		return "R15";
+		case R14:		return "R14";
+		case R13:		return "R13";
+		case R12:		return "R12";
+		case RBP:		return "RBP";
+		case RBX:		return "RBX";
+		case R11:		return "R11";
+		case R10:		return "R10";
 		case R9:		return "R9";
 		case R8:		return "R8";
-		case RAX:	   return "RAX";
-		case RCX:	   return "RCX";
-		case RDX:	   return "RDX";
-		case RSI:	   return "RSI";
-		case RDI:	   return "RDI";
-		case ORIG_RAX:  return "ORIG_RAX";
-		case RIP:	   return "RIP";
+		case RAX:		return "RAX";
+		case RCX:		return "RCX";
+		case RDX:		return "RDX";
+		case RSI:		return "RSI";
+		case RDI:		return "RDI";
+		case ORIG_RAX:	return "ORIG_RAX";
+		case RIP:		return "RIP";
 		case CS:		return "CS";
 		case EFLAGS:	return "EFLAGS";
-		case RSP:	   return "RSP";
+		case RSP:		return "RSP";
 		case SS:		return "SS";
-		case FS_BASE:   return "FS_BASE";
-		case GS_BASE:   return "GS_BASE";
+		case FS_BASE:	return "FS_BASE";
+		case GS_BASE:	return "GS_BASE";
 		case DS:		return "DS";
 		case ES:		return "ES";
 		case FS:		return "FS";
@@ -324,7 +314,7 @@ extern ssize_t process_vm_readv (pid_t __pid, const struct iovec *__lvec,
 				 const struct iovec *__rvec,
 				 unsigned long int __riovcnt,
 				 unsigned long int __flags)
-  __THROW;
+	__THROW;
 */
 //todo: verifiy this
 void	Debugee::read_data(t_program_ptr address, void *buffer, size_t len) {
@@ -334,11 +324,11 @@ void	Debugee::read_data(t_program_ptr address, void *buffer, size_t len) {
 	while (i < len)
 	{
 		cur_word = this->get_word(address + i);
+		ERRNO_CHECK;
 		//cur_word = ptrace(PTRACE_PEEKTEXT, this->_pid, address + i, NULL);
 		size_t	word_idx = 0;
 		while (word_idx < sizeof (t_word) && i < len)
 		{
-			ERRNO_CHECK;
 			((uint8_t *)buffer)[i++] = ((uint8_t *)(&cur_word))[word_idx++];
 		}
 	}
