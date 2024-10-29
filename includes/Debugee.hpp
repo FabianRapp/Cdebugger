@@ -63,8 +63,8 @@ private:
 		bool					_paused;
 		int						_last_sig;
 		std::string				_name;
-		MemMaps					_memmaps;
 public:
+		MemMaps					_memmaps;
 								Debugee(void) = delete;
 								Debugee(char *path, char **av, char **env);
 								Debugee(pid_t pid);
@@ -84,6 +84,7 @@ public:
 		bool					blocked(void);
 		void					dump_regs(void);
 		void					set_reg(t_reg_index idx, unsigned long long val);
+		unsigned long long		get_reg(t_reg_index idx);
 		void					read_data(t_program_ptr address, void *buffer, size_t len);
 };
 

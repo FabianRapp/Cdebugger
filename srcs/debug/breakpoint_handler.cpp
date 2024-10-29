@@ -36,6 +36,12 @@ bool	handle_input(Debugee &debugee, char *line) {
 		return (false);
 	} else if (!strncmp(line, "REGS", strlen("REGS"))) {
 		debugee.dump_regs();
+	} else if (!strncmp(line, "pid", strlen("pid"))) {
+		std::cout << std::dec << debugee.get_pid() << std::hex << std::endl;
+	} else if (!strncmp(line, "SYS", strlen("SYS"))) {
+		//todo: improvised:
+		ptrace(PTRACE_SYSCALL, debugee.get_pid(), 0, 0);
+		return (false);
 	} else if (!strncmp(line, "SET REG", strlen("SET REG"))) {
 		char	*index_str = readline("Which reg(call caps):");
 		char	*new_val_str = readline("Value:");

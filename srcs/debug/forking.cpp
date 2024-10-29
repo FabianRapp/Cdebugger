@@ -44,14 +44,14 @@ void	setup_first_breakpoint(Debugee &debugee) {
 	//debugee.cont();
 	//debugee.wait();
 	//ERRNO_CHECK;
-	while (!debugee.finished()) {
-		breakpoint_handler(debugee);
-		ERRNO_CHECK;
-		debugee.wait();
-		ERRNO_CHECK;
-	}
+	//while (!debugee.finished()) {
+	//	breakpoint_handler(debugee);
+	//	ERRNO_CHECK;
+	//	debugee.wait();
+	//	ERRNO_CHECK;
+	//}
 
-	ERRNO_CHECK;
+	//ERRNO_CHECK;
 }
 
 void	fork_process(t_debugger *debugger, char **av, char **env) {

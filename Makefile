@@ -35,8 +35,8 @@ debugger: $(OBJS)
 	$(CC) -o $(NAME) $(OBJS) $(LIBS) $(CFLAGS)
 
 dummy: $(OBJS_PROGRAMM)
-	$(CC) -Wall -Wextra -g $(INCLUDES) $(SRCS_PROGRAMM) -o $(NAME_PROGRAMM)
-	$(CC) -Wall -Wextra -g $(INCLUDES) srcs/programm/loop.c -o loop
+	$(CC) -Wall -Wextra -g -O0 $(INCLUDES) $(SRCS_PROGRAMM) -o $(NAME_PROGRAMM)
+	$(CC) -Wall -Wextra -g -O0 $(INCLUDES) srcs/programm/loop.c -o loop
 
 $(OBJS_DIR)%.o: srcs/%.c
 	mkdir -p $(@D)

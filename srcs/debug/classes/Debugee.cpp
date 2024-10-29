@@ -143,7 +143,6 @@ t_word	Debugee::get_word(t_program_ptr address) {
 	assert(this->_paused);
 	ERRNO_CHECK;
 	errno = 0;
-	std::cout << "bp address: " << std::hex << address << std::endl;
 
 	long	bytes = ptrace(PTRACE_PEEKTEXT, this->get_pid(), address, 0);
 	uint8_t	b1 = bytes & 0xff;
@@ -305,6 +304,12 @@ void	Debugee::set_reg(t_reg_index idx, unsigned long long val) {
 	ERRNO_CHECK;
 }
 
+unsigned long long	Debugee::get_reg(t_reg_index idx) {
+	this->_refresh_regs();
+	ERRNO_CHECK;
+	return (((unsigned long long *)(&this->_regs))[idx]);
+}
+
 void	Debugee::dump_regs(void) {
 	this->_refresh_regs();
 	for (int i = 0; i < REGS_COUNT; i++) {
@@ -326,12 +331,12 @@ void	Debugee::read_data(t_program_ptr address, void *buffer, size_t len) {
 	size_t		i = 0;
 	t_word	cur_word;
 
-	//while (i < len)
+	while (i < len)
 	{
-		//cur_word = this->get_word(address + i);
-		cur_word = ptrace(PTRACE_PEEKTEXT, this->_pid, address + i, NULL);
+		cur_word = this->get_word(address + i);
+		//cur_word = ptrace(PTRACE_PEEKTEXT, this->_pid, address + i, NULL);
 		size_t	word_idx = 0;
-		//while (word_idx < sizeof (t_word) && i < len)
+		while (word_idx < sizeof (t_word) && i < len)
 		{
 			ERRNO_CHECK;
 			((uint8_t *)buffer)[i++] = ((uint8_t *)(&cur_word))[word_idx++];

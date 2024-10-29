@@ -29,15 +29,18 @@ int	main(void) {
 	//setup_sigtrap();
 	//BASIC_BREAK;
 
-	char	hello[] = "Hello from programm\n";
-	write (1, hello, my_strlen(hello));
+	//char	hello[] = "Hello from programm\n";
+	//write (1, hello, my_strlen(hello));
 	int		i = 0;
-	char	str[16] = {0};
-	strcpy(str, "hi\n");
+	//char	str[16] = {0};
+	//strcpy(str, "hi\n");
 	while (1)
 	{
-		write(1, str, strlen(str));
-		usleep(100000);
+		i += '0';
+		write(1, &i, 1);
+		i -= '0';
+		//write(1, str, strlen(str));
+		usleep(1000);
 		i++;
 		i%= 10;
 	}
