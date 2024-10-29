@@ -95,14 +95,17 @@ int main(int ac, char *av[], char *env[]) {
 	while (!debugger.debugee->finished()) {
 		breakpoint_handler(*debugger.debugee);
 		debugger.debugee->wait();
-		uint8_t	buf[100];
-		//todo: make fn in Debugee that verifys addresses for operations based of maps
-		debugger.debugee->read_data(debugger.debugee->get_reg(RSP), buf, sizeof buf);
-		//debugger.debugee->read_data(0x7ffffffdd000, buf, sizeof buf);
-		for (size_t i = 0; i < sizeof buf; i++) {
-			std::cout << std::hex << (size_t)buf[i] << "|";
+		if (debugger.debugee->finished()) {
+			break ;
 		}
-		std::cout << std::endl;
+		//uint8_t	buf[8];
+		////todo: make fn in Debugee that verifys addresses for operations based of maps
+		//debugger.debugee->read_data(debugger.debugee->get_reg(RSP), buf, sizeof buf);
+		////debugger.debugee->read_data(0x7ffffffdd000, buf, sizeof buf);
+		//for (size_t i = 0; i < sizeof buf; i++) {
+		//	std::cout << std::hex << (size_t)buf[i] << "|";
+		//}
+		//std::cout << std::endl;
 		//debugger.debugee->set_reg(RIP, debugger.debugee->_memmaps.ranges[0].start);
 	}
 	//int status;

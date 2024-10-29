@@ -27,10 +27,11 @@ bool	handle_input(Debugee &debugee, char *line) {
 			return (false);
 		}
 		PRINT_GREEN("continue steped into breakpoint");
-		t_program_ptr	pos = bp->get_pos();
+		t_addr	pos = bp->get_pos();
 		debugee.set_pc(bp->get_pos());
 		delete bp;
 		//debugee.set_pc(pos - 1);
+		(void)pos;
 		bp = 0;
 		debugee.cont();
 		return (false);
@@ -39,8 +40,18 @@ bool	handle_input(Debugee &debugee, char *line) {
 	} else if (!strncmp(line, "pid", strlen("pid"))) {
 		std::cout << std::dec << debugee.get_pid() << std::hex << std::endl;
 	} else if (!strncmp(line, "SYS", strlen("SYS"))) {
-		//todo: improvised:
-		ptrace(PTRACE_SYSCALL, debugee.get_pid(), 0, 0);
+		if (!bp || bp->get_pos() != debugee.get_pc()) {
+			debugee.next_syscall();
+			return (false);
+		}
+		PRINT_GREEN("SYS steped into breakpoint");
+		t_addr	pos = bp->get_pos();
+		debugee.set_pc(bp->get_pos());
+		delete bp;
+		//debugee.set_pc(pos - 1);
+		(void)pos;
+		bp = 0;
+		debugee.next_syscall();
 		return (false);
 	} else if (!strncmp(line, "SET REG", strlen("SET REG"))) {
 		char	*index_str = readline("Which reg(call caps):");

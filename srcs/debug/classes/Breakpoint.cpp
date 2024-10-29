@@ -3,7 +3,7 @@
 #include <Debugee.hpp>
 
 //inserts INT3 at postion
-Breakpoint::Breakpoint(t_program_ptr position, Debugee &debugee)
+Breakpoint::Breakpoint(t_addr position, Debugee &debugee)
 	: _pos(position),
 	_replaced_word(debugee.get_word(position)),
 	_debugee(debugee) {
@@ -28,11 +28,11 @@ Breakpoint::Breakpoint(const Breakpoint &old)
 	_debugee(old._debugee) {
 }
 
-Breakpoint	*Breakpoint::new_bp(t_program_ptr position, Debugee &debugee) {
+Breakpoint	*Breakpoint::new_bp(t_addr position, Debugee &debugee) {
 	return (new Breakpoint(position, debugee));
 }
 
-t_program_ptr	Breakpoint::get_pos(void) const {
+t_addr	Breakpoint::get_pos(void) const {
 	return (this->_pos);
 }
 

@@ -7,8 +7,7 @@ return (this->_pid);
 }
 
 Debugee::Debugee(char *path, char **av, char **env)
-: _pid(fork()), _finished(false), _paused(false), _name(path),
-	_memmaps(_pid) {
+: _pid(fork()), _finished(false), _paused(false), _name(path) {
 	assert("fork failed" && this->get_pid() >= 0);
 	if (this->_pid == 0) {
 		personality(ADDR_NO_RANDOMIZE);
@@ -28,13 +27,14 @@ Debugee::Debugee(char *path, char **av, char **env)
 	ptrace(PTRACE_ATTACH, this->_pid, 0, 0, 0); */
 	std::cout << "debugging " << path << " with pid " << this->_pid << std::endl;
 	this->wait();//wait for execve call from child
+	this->_memmaps = MemMaps(this->_pid);
 	PRINT_GREEN("PARENT: child called execve");
 	ERRNO_CHECK;
 	
 }
 
 Debugee::Debugee(pid_t pid)
- : _pid(pid), _memmaps(pid) {
+ : _pid(pid) {
 	std::string	cmdline_path = "/proc/" + std::to_string(pid) + "/cmdline";
 
 	std::ifstream	cmdline_file(cmdline_path);
@@ -53,6 +53,7 @@ Debugee::Debugee(pid_t pid)
 	ERRNO_CHECK;
 	int stat;
 	waitpid(pid, &stat, 0);
+	this->_memmaps = MemMaps(this->_pid);
 	this->_paused = true;
 	ERRNO_CHECK;
 	PRINT_GREEN("Debugging " << pid);
@@ -82,6 +83,17 @@ void	Debugee::cont(void) {
 	this->_paused = false;
 }
 
+void	Debugee::next_syscall(void) {
+	assert(this->_paused);
+	if (ptrace(PTRACE_SYSCALL, this->get_pid(), 0, 0) < 0) {
+		std::cerr << "Error Debugee::cont(): PTRACE_SYSCALL failed"
+			<< std::endl;
+		assert(0);
+	}
+	ERRNO_CHECK;
+	this->_paused = false;
+}
+
 void	Debugee::step(void) {
 	assert(this->_paused);
 	if (ptrace(PTRACE_SINGLESTEP, this->get_pid(), 0, 0) < 0) {
@@ -102,10 +114,10 @@ void	Debugee::_refresh_regs(void) {
 	}
 }
 
-t_program_ptr	Debugee::get_pc(void) {
+t_addr	Debugee::get_pc(void) {
 	assert(this->_paused);
 	this->_refresh_regs();
-	return ((t_program_ptr)this->_regs.rip);
+	return ((t_addr)this->_regs.rip);
 }
 
 void	Debugee::set_pc(t_reg new_pc) {
@@ -120,18 +132,20 @@ void	Debugee::set_pc(t_reg new_pc) {
 }
 
 // todo: mange breakpoints in class
-Breakpoint	*Debugee::new_bp(t_program_ptr address) {
+Breakpoint	*Debugee::new_bp(t_addr address) {
 	assert(this->_paused);
 	return (Breakpoint::new_bp(address, *this));
 }
 
-t_word	Debugee::get_word(t_program_ptr address) {
+t_word	Debugee::get_word(t_addr address) {
 	t_word	word;
 
 	assert(this->_paused);
 	ERRNO_CHECK;
 	errno = 0;
 
+	assert(this->_memmaps.in_any_range(address));
+	assert(this->_memmaps.is_readable(address));
 	long	bytes = ptrace(PTRACE_PEEKTEXT, this->get_pid(), address, 0);
 	uint8_t	b1 = bytes & 0xff;
 	uint8_t	b2 = bytes & 0xff00;
@@ -146,11 +160,18 @@ t_word	Debugee::get_word(t_program_ptr address) {
 	return (word);
 }
 
-void	Debugee::set_word(t_program_ptr address, t_word word) {
+void	Debugee::set_word(t_addr address, t_word word) {
 	assert(this->_paused);
+	assert(this->_memmaps.in_any_range(address));
 	PRINT_YELLOW("at " << std::hex << address << ": replacing"
 		<< this->get_word(address) << " with " << word);
-
+	/*
+		https://yarchive.net/comp/linux/ptrace_mmap.html
+		* tracer may write to read only memory
+			-> not needed to assert(this->_memmaps.is_writeable(address))
+		* no write permission only means no change can be writen back to the fs
+			(no write back to the executable file)
+	*/
 	if (ptrace(PTRACE_POKETEXT, this->get_pid(), address, word) < 0) {
 		std::cerr << "Error Debugee::set_word(): PTRACE_POKETEXT failed"
 			<< std::endl;
@@ -162,7 +183,7 @@ void wait_print_exit_status(int status) {
 	if (WIFSIGNALED(status)) {
 		PRINT_YELLOW("Exited due to uncaught signal: " << WEXITSTATUS(status));
 	} else if (WIFEXITED(status)) {
-		PRINT_YELLOW("Exited normally with exit code " << WIFEXITED(status));
+		PRINT_YELLOW("Exited normally with exit code " << WEXITSTATUS(status));
 	} else if (WIFSTOPPED(status)) {
 		int	sig = WSTOPSIG(status);
 		if (sig == 5) {
@@ -317,10 +338,11 @@ extern ssize_t process_vm_readv (pid_t __pid, const struct iovec *__lvec,
 	__THROW;
 */
 //todo: verifiy this
-void	Debugee::read_data(t_program_ptr address, void *buffer, size_t len) {
+void	Debugee::read_data(t_addr address, void *buffer, size_t len) {
 	size_t		i = 0;
 	t_word	cur_word;
 
+	//this->_memmaps.print();
 	while (i < len)
 	{
 		cur_word = this->get_word(address + i);

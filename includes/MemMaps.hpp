@@ -9,12 +9,13 @@
 # include <cassert>
 # include <vector>
 # include <macros.h>
+# include <types.hpp>
 
 class MemMaps {
 private:
 	typedef struct s_range {
-		size_t		start;
-		size_t		end;
+		t_addr		start;
+		t_addr		end;
 		bool		read;
 		bool		write;
 		bool		execute;
@@ -26,7 +27,8 @@ private:
 		std::string	path;
 	}	t_range;
 
-	enum permission_type {
+	enum range_check {
+		RANGE_ANY,
 		PERMISSION_READ,
 		PERMISSION_WRITE,
 		PERMISSION_EXECUTE,
@@ -34,8 +36,8 @@ private:
 	};
 
 	std::vector<t_range>	_ranges;
-	bool					_check_permission(unsigned long long address,
-								enum permission_type type);
+	bool					_check_range(t_addr address,
+								enum range_check type) const;
 	void					_parse_range(t_range &cur, std::string &entry);
 	void					_parse_permissions(t_range &cur, std::string &entry);
 	void					_parse_path(t_range &cur, std::string &entry,
@@ -44,14 +46,19 @@ private:
 	void					_parse_device(t_range &cur, std::string &entry);
 	void					_parse_offset(t_range &cur, std::string &entry);
 public:
-							MemMaps(void) = delete;
+							MemMaps(void);
 							MemMaps(pid_t pid);
 							~MemMaps(void);
+							MemMaps(const MemMaps &old);
+			MemMaps			&operator=(const MemMaps &right);
 
-			bool			is_readable(unsigned long long address);
-			bool			is_writeable(unsigned long long address);
-			bool			is_executable(unsigned long long address);
-			bool			is_shared(unsigned long long address);
+			void			print(void) const;
+
+			bool			in_any_range(t_addr address) const;
+			bool			is_readable(t_addr address) const;
+			bool			is_writeable(t_addr address) const;
+			bool			is_executable(t_addr address) const;
+			bool			is_shared(t_addr address) const;
 };
 
 #endif //MEMMAPS_HPP

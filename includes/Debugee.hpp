@@ -63,8 +63,8 @@ private:
 		bool					_paused;
 		int						_last_sig;
 		std::string				_name;
-public:
 		MemMaps					_memmaps;
+public:
 								Debugee(void) = delete;
 								Debugee(char *path, char **av, char **env);
 								Debugee(pid_t pid);
@@ -73,19 +73,20 @@ public:
 								~Debugee(void);
 		pid_t					get_pid(void) const;
 		void					cont(void);
+		void					next_syscall(void);
 		void					step(void);
-		t_program_ptr			get_pc(void);
+		t_addr					get_pc(void);
 		void					set_pc(t_reg new_pc);
-		Breakpoint				*new_bp(t_program_ptr address);
-		t_word					get_word(t_program_ptr address);
-		void					set_word(t_program_ptr address, t_word word);
+		Breakpoint				*new_bp(t_addr address);
+		t_word					get_word(t_addr address);
+		void					set_word(t_addr address, t_word word);
 		void					wait(void);
 		bool					finished(void);
 		bool					blocked(void);
 		void					dump_regs(void);
 		void					set_reg(t_reg_index idx, unsigned long long val);
 		unsigned long long		get_reg(t_reg_index idx);
-		void					read_data(t_program_ptr address, void *buffer, size_t len);
+		void					read_data(t_addr address, void *buffer, size_t len);
 };
 
 #endif //DEBUGEE_HPP

@@ -1,5 +1,17 @@
 #include <MemMaps.hpp>
 
+MemMaps::MemMaps(void) {
+}
+
+MemMaps::MemMaps(const MemMaps &old) {
+	this->_ranges = old._ranges;
+}
+
+MemMaps	&MemMaps::operator=(const MemMaps &right) {
+	this->_ranges = right._ranges;
+	return (*this);
+}
+
 void	MemMaps::_parse_range(t_range &cur, std::string &entry) {
 	std::stringstream	start;
 	start << std::hex << entry.substr(0, entry.find('-'));
@@ -86,6 +98,7 @@ MemMaps::MemMaps(pid_t pid) {
 				break ;
 			}
 			// todo: wtf is this
+			std::cout << "entry: " << entry << std::endl;
 			if (entry == "(deleted)") {
 				col--;
 				continue ;
@@ -123,33 +136,59 @@ MemMaps::MemMaps(pid_t pid) {
 MemMaps::~MemMaps(void) {
 }
 
-bool	MemMaps::_check_permission(unsigned long long address,
-	enum permission_type type) {
+void	MemMaps::print(void) const {
+	for (size_t i = 0; i < this->_ranges.size(); i++) {
+		t_range	cur = this->_ranges[i];
+		std::cout << std::hex << cur.start << "-" << cur.end << "|"
+			<< cur.read << cur.write << cur.execute << cur.shared << std::endl;
+	}
+}
+
+bool	MemMaps::_check_range(t_addr address,
+	enum range_check type) const {
+	std::cout << "checking address " << std::hex << address << " for " << type << ":";
 	for (size_t i = 0; i < this->_ranges.size(); i++) {
 		if (address < this->_ranges[i].start || address >= this->_ranges[i].end)
 			continue ;
 		switch (type) {
-			case (PERMISSION_READ): return (this->_ranges[i].read);
-			case (PERMISSION_WRITE): return (this->_ranges[i].write);
-			case (PERMISSION_EXECUTE): return (this->_ranges[i].execute);
-			case (PERMISSION_SHARED): return (this->_ranges[i].shared);
+			case (RANGE_ANY): {
+				std::cout << "1\n";
+				return (true);
+			} case (PERMISSION_READ): {
+				std::cout << this->_ranges[i].read << std::endl;
+				return (this->_ranges[i].read);
+			} case (PERMISSION_WRITE): {
+				std::cout << this->_ranges[i].write << std::endl;
+				return (this->_ranges[i].write);
+			} case (PERMISSION_EXECUTE): {
+				std::cout << this->_ranges[i].execute << std::endl;
+				return (this->_ranges[i].execute);
+			} case (PERMISSION_SHARED): {
+				std::cout << this->_ranges[i].shared << std::endl;
+				return (this->_ranges[i].shared);
+			}
 		}
 	}
+	std::cout << "address " << std::hex << address << std::dec << " does not match check " << type << std::endl;
 	return (false);
 }
 
-bool	MemMaps::is_readable(unsigned long long address) {
-	return (this->_check_permission(address, PERMISSION_READ));
+bool	MemMaps::in_any_range(t_addr address) const {
+	return (this->_check_range(address, RANGE_ANY));
 }
 
-bool	MemMaps::is_writeable(unsigned long long address) {
-	return (this->_check_permission(address, PERMISSION_WRITE));
+bool	MemMaps::is_readable(t_addr address) const {
+	return (this->_check_range(address, PERMISSION_READ));
 }
 
-bool	MemMaps::is_executable(unsigned long long address) {
-	return (this->_check_permission(address, PERMISSION_EXECUTE));
+bool	MemMaps::is_writeable(t_addr address) const {
+	return (this->_check_range(address, PERMISSION_WRITE));
 }
 
-bool	MemMaps::is_shared(unsigned long long address) {
-	return (this->_check_permission(address, PERMISSION_SHARED));
+bool	MemMaps::is_executable(t_addr address) const {
+	return (this->_check_range(address, PERMISSION_EXECUTE));
+}
+
+bool	MemMaps::is_shared(t_addr address) const {
+	return (this->_check_range(address, PERMISSION_SHARED));
 }

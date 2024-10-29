@@ -10,6 +10,7 @@
 
 class							Debugee;
 typedef int64_t					t_word;
-typedef int64_t					t_program_ptr;
+typedef uint64_t				t_program_ptr;
+typedef int64_t					t_addr;
 typedef uint64_t				t_reg;
 #endif // TYPES_HPP
