@@ -1,24 +1,6 @@
 #include <debugger.hpp>
 #include <Debugee.hpp>
 
-void	remove_cur_breakpoint(t_debugger *debugger) {
-	assert(ptrace(PTRACE_GETREGS, debugger->pid, 0, &debugger->regs) >= 0);
-	printf("old replace loc: %p\n", replaced_program_location);
-	printf("cur : %p\n", (void *)(debugger->regs.rip));
-	//debugger->regs.rip = (long int)replaced_program_location + 1;
-	debugger->regs.rip -= 1;
-	ERRNO_CHECK;
-	ptrace(PTRACE_SETREGS, debugger->pid, 0, &debugger->regs);
-	ERRNO_CHECK;
-	ptrace(PTRACE_GETREGS, debugger->pid, 0, &debugger->regs);
-
-	ERRNO_CHECK;
-	ptrace(PTRACE_POKETEXT, debugger->pid, debugger->regs.rip, 0xc88e8e78948);
-	ERRNO_CHECK;
-	ptrace(PTRACE_CONT, debugger->pid, 0, 0);
-	ERRNO_CHECK;
-}
-
 // return false incase the programm should continue
 bool	handle_input(Debugee &debugee, char *line) {
 	if (!strncmp(line, "continue", strlen("continue"))) {
@@ -37,6 +19,8 @@ bool	handle_input(Debugee &debugee, char *line) {
 		return (false);
 	} else if (!strncmp(line, "REGS", strlen("REGS"))) {
 		debugee.dump_regs();
+	} else if (!strncmp(line, "MAPS", strlen("MAPS"))) {
+		debugee.print_maps();
 	} else if (!strncmp(line, "pid", strlen("pid"))) {
 		std::cout << std::dec << debugee.get_pid() << std::hex << std::endl;
 	} else if (!strncmp(line, "SYS", strlen("SYS"))) {
@@ -102,6 +86,7 @@ bool	handle_input(Debugee &debugee, char *line) {
 }
 
 void	breakpoint_handler(Debugee &debugee) {
+	assert(debugee.is_paused());
 	PRINT_GREEN("PC at " << std::hex << debugee.get_pc());
 	PRINT_GREEN("cur word at bp: " << std::hex << debugee.get_word(debugee.get_pc()));
 	char	*line = readline("debugger(): ");

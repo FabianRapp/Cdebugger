@@ -1,8 +1,5 @@
 #include <MemMaps.hpp>
 
-MemMaps::MemMaps(void) {
-}
-
 MemMaps::MemMaps(const MemMaps &old) {
 	this->_ranges = old._ranges;
 }
@@ -80,7 +77,8 @@ void	MemMaps::_parse_path(t_range &cur, std::string &entry, std::ifstream &file,
 	}
 }
 
-MemMaps::MemMaps(pid_t pid) {
+MemMaps::MemMaps(pid_t pid)
+	: _pid(pid) {
 	if (!pid)
 		return ;
 	std::string		path = "/proc/" + std::to_string(pid) + "/maps";
@@ -136,6 +134,10 @@ MemMaps::MemMaps(pid_t pid) {
 MemMaps::~MemMaps(void) {
 }
 
+void	MemMaps::refresh(void) {
+	*this = MemMaps(this->_pid);
+}
+
 void	MemMaps::print(void) const {
 	for (size_t i = 0; i < this->_ranges.size(); i++) {
 		t_range	cur = this->_ranges[i];
@@ -152,7 +154,7 @@ bool	MemMaps::_check_range(t_addr address,
 			continue ;
 		switch (type) {
 			case (RANGE_ANY): {
-				std::cout << "1\n";
+				std::cout << "1" << std::endl;
 				return (true);
 			} case (PERMISSION_READ): {
 				std::cout << this->_ranges[i].read << std::endl;
@@ -192,3 +194,5 @@ bool	MemMaps::is_executable(t_addr address) const {
 bool	MemMaps::is_shared(t_addr address) const {
 	return (this->_check_range(address, PERMISSION_SHARED));
 }
+
+

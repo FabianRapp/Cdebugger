@@ -16,7 +16,7 @@
 
 # ifndef ERRNO_CHECK
 #  define ERRNO_CHECK do {if (errno){ \
-	printf("errno: %s(%s line %d)\n", strerror(errno), __FILE__, __LINE__); \
+	printf("errno: %d: %s(%s line %d)\n", errno, strerror(errno), __FILE__, __LINE__); \
 	assert(errno == 0);}} while(0)
 # endif //ERNNO_CHECK
 

@@ -7,7 +7,7 @@ return (this->_pid);
 }
 
 Debugee::Debugee(char *path, char **av, char **env)
-: _pid(fork()), _finished(false), _paused(false), _name(path) {
+: _pid(fork()), _finished(false), _paused(false), _name(path), _memmaps(_pid) {
 	assert("fork failed" && this->get_pid() >= 0);
 	if (this->_pid == 0) {
 		personality(ADDR_NO_RANDOMIZE);
@@ -34,7 +34,7 @@ Debugee::Debugee(char *path, char **av, char **env)
 }
 
 Debugee::Debugee(pid_t pid)
- : _pid(pid) {
+ : _pid(pid), _memmaps(_pid) {
 	std::string	cmdline_path = "/proc/" + std::to_string(pid) + "/cmdline";
 
 	std::ifstream	cmdline_file(cmdline_path);
@@ -49,7 +49,7 @@ Debugee::Debugee(pid_t pid)
 	ERRNO_CHECK;
 	printf("pid: %d\n", pid);
 	ptrace(PTRACE_ATTACH, pid, 0, 0);
-	//kill(pid, SIGTRAP);
+	kill(pid, SIGTRAP);
 	ERRNO_CHECK;
 	int stat;
 	waitpid(pid, &stat, 0);
@@ -112,6 +112,12 @@ void	Debugee::_refresh_regs(void) {
 			<< std::endl;
 		assert(0);
 	}
+}
+
+void	Debugee::_refresh_maps(void) {
+	assert(this->_paused);
+	this->_memmaps.refresh();
+	ERRNO_CHECK;
 }
 
 t_addr	Debugee::get_pc(void) {
@@ -203,10 +209,40 @@ void wait_print_exit_status(int status) {
 	}
 }
 
+int	sig_handler_flag = 0;
+
 void	Debugee::wait(void) {
 	int	status;
+	int	wait_ret;
 
-	waitpid(this->get_pid(), &status, 0);
+	block_signals();
+	wait_ret = waitpid(this->get_pid(), &status, WNOHANG);
+	assert(!this->_paused && !this->_finished);
+	ERRNO_CHECK;
+	unblock_signals();
+	ERRNO_CHECK;
+	//usleep(1000);
+	ERRNO_CHECK;
+	while (wait_ret == 0) {
+		block_signals();
+		ERRNO_CHECK;
+		//if (sig_handler_flag > 0) {
+		//	sig_handler_flag = -1;
+		//	unblock_signals();
+		//	kill(this->get_pid(), SIGTRAP);
+		//	block_signals();
+		//	ERRNO_CHECK;
+		//}
+		ERRNO_CHECK;
+		wait_ret = waitpid(this->get_pid(), &status, WNOHANG);
+		//usleep(1000);
+		ERRNO_CHECK;
+		unblock_signals();
+		ERRNO_CHECK;
+	}
+	sig_handler_flag = 0;
+	assert(wait_ret >= 0);
+	ERRNO_CHECK;
 	if (WIFSTOPPED(status)) {
 		this->_paused = true;
 		this->_last_sig = WSTOPSIG(status);
@@ -216,12 +252,22 @@ void	Debugee::wait(void) {
 	} else {
 		this->_paused = false;
 	}
+	if (WIFEXITED(status)) {
+		PRINT_RED("Child exited");
+		this->_finished = true;
+	}
 	if (!WIFSIGNALED(status) && WIFEXITED(status)) {
 		this->_finished = true;
 	} else if (WIFSTOPPED(status) && WSTOPSIG(status) == 11) {
 		PRINT_RED("CHILD SEGFAULTED");
 		this->_finished = true;
 		this->_last_sig = 11;
+	}
+	ERRNO_CHECK;
+	if (this->_paused)
+	{
+		this->_refresh_maps();
+		this->_refresh_regs();
 	}
 	wait_print_exit_status(status);
 	ERRNO_CHECK;
@@ -354,4 +400,12 @@ void	Debugee::read_data(t_addr address, void *buffer, size_t len) {
 			((uint8_t *)buffer)[i++] = ((uint8_t *)(&cur_word))[word_idx++];
 		}
 	}
+}
+
+bool	Debugee::is_paused(void) const {
+	return (this->_paused);
+}
+
+void	Debugee::print_maps(void) const {
+	this->_memmaps.print();
 }

@@ -34,8 +34,7 @@
 
 
 
-extern uint8_t		*replaced_program_location;
-extern uint64_t		replaced_word;
+extern int	sig_handler_flag;
 extern Breakpoint	*bp;
 
 typedef struct s_debugger {
@@ -54,6 +53,8 @@ void	fork_process(t_debugger *debugger, char **av, char **env);
 
 void	test_op_len(void);
 size_t	op_len(t_program_ptr op);
+void	block_signals(void);
+void	unblock_signals(void);
 
 void	remove_cur_breakpoint(t_debugger *debugger);
 #endif //DEBUGGER1_H

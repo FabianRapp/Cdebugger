@@ -1,33 +1,9 @@
 #include <debugger.hpp>
 #include <Debugee.hpp>
 
-uint8_t		*replaced_program_location;
-uint64_t	replaced_word;
-
+sigset_t	tmp_blocked_sigs;
 t_debugger	debugger;
-// return the removed instruction byte
-void	insert_breakpoint_here(uint8_t *program, t_debugger *debugger) {
-	{
-		replaced_program_location = program;
-		printf("inserting at %p\n", program);
-		printf("inserting at %p\n", program);
-		replaced_word = ptrace(PTRACE_PEEKTEXT, debugger->pid, debugger->regs.rip, NULL);
-		printf("old word: %16lx\n", replaced_word);
-	}
-	{
-		const size_t shift_size = ((sizeof (uint64_t)) - 1) * 8;
-		uint64_t	opcode = ((uint8_t)INT3_OPCODE);
-		opcode <<= shift_size;
-		uint64_t	new_word = 0xFF; 
-		new_word <<= shift_size;
-		new_word = ~new_word;
-		new_word &= replaced_word;
-		new_word |= opcode;
-		printf("new word: %16lx\n", new_word);
 
-		ptrace(PTRACE_POKETEXT, debugger->pid, debugger->regs.rip, new_word);
-	}
-}
 
 void	breakpoint_init_print(void) {
 	std::string	options[] = {"continue", "REGS", "n/next"};
@@ -47,8 +23,8 @@ void	breakpoint_init_print(void) {
 //	assert(sigaction(SIGTRAP, &sigact, NULL) != -1);
 //}
 
-void	signal_handler_ctrl_c(int sig) {
-	(void)sig;
+void	signal_handler_ctrl_c(int sig, siginfo_t *info, void *vcontext) {
+	ucontext_t	*context = (ucontext_t *)vcontext;
 	char	*input = NULL;
 	printf("'EXIT' or ctrl+d to exit\n");
 	input = readline("INPUT: ");
@@ -60,23 +36,55 @@ void	signal_handler_ctrl_c(int sig) {
 		kill(debugger.debugee->get_pid(), SIGTRAP);
 	}
 	free(input);
+	//sig_handler_flag = 1;
+	(void)sig;
+	(void)info;
 }
 
-void	set_ctrl_c(void)
-{
+void	set_ctrl_c(void) {
 	struct sigaction	sig;
 
+	sigaddset(&tmp_blocked_sigs, SIGINT);
+	bzero(&sig, sizeof sig);
 	sigemptyset(&(sig.sa_mask));
-	sig.sa_flags = 0;
-	sig.sa_handler = signal_handler_ctrl_c;
+	sig.sa_flags = SA_SIGINFO;
+	sig.sa_sigaction = signal_handler_ctrl_c;
 	if (sigaction(SIGINT, &sig, NULL) == -1)
 		assert(0);
 }
+
+void	set_signals(void) {
+	sigemptyset(&tmp_blocked_sigs);
+	set_ctrl_c();
+	bzero(&tmp_blocked_sigs, sizeof tmp_blocked_sigs);
+}
+
+void	ignore_sig(int sig) {
+	struct sigaction	sig_act;
+
+	bzero(&sig_act, sizeof sig_act);
+	sigemptyset(&sig_act.sa_mask);
+	if (sigaction(sig, &sig_act, NULL) == -1)
+		assert(0);
+}
+
+
+// only for defined singlas, rather than all
+void	block_signals(void) {
+	//ignore_sig(SIGINT);
+	sigprocmask(SIG_BLOCK, &tmp_blocked_sigs, NULL);
+}
+
+// only for defined singlas, rather than all
+void	unblock_signals(void) {
+	sigprocmask(SIG_UNBLOCK, &tmp_blocked_sigs, NULL);
+}
+
 t_debugger	init(int ac, char **av, char **env) {
 	test_op_len();
 	assert("need atleast 1 argument: <executable> or <pid + anything>" && ac > 1);
 	debugger.page_size = sysconf(_SC_PAGESIZE);
-	set_ctrl_c();
+	set_signals();
 	if (ac == 2)
 		fork_process(&debugger, av, env);
 	else if (ac == 3) {
@@ -88,8 +96,13 @@ t_debugger	init(int ac, char **av, char **env) {
 	return (debugger);
 }
 
+void	delete_debugee(void) {
+	delete debugger.debugee;
+}
+
 int main(int ac, char *av[], char *env[]) {
 	debugger = init(ac, av, env);
+	atexit(delete_debugee);
 	//debugger.debugee->cont();
 	printf("entering main loop\n");
 	while (!debugger.debugee->finished()) {
@@ -110,7 +123,7 @@ int main(int ac, char *av[], char *env[]) {
 	}
 	//int status;
 	//waitpid(debugger.pid,&status, 0);
-	delete debugger.debugee;
+	//delete debugger.debugee;
 	return 0;
 }
 

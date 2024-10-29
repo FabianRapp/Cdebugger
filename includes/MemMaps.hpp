@@ -36,6 +36,7 @@ private:
 	};
 
 	std::vector<t_range>	_ranges;
+	pid_t					_pid;
 	bool					_check_range(t_addr address,
 								enum range_check type) const;
 	void					_parse_range(t_range &cur, std::string &entry);
@@ -46,13 +47,14 @@ private:
 	void					_parse_device(t_range &cur, std::string &entry);
 	void					_parse_offset(t_range &cur, std::string &entry);
 public:
-							MemMaps(void);
+							MemMaps(void) = delete;
 							MemMaps(pid_t pid);
 							~MemMaps(void);
 							MemMaps(const MemMaps &old);
 			MemMaps			&operator=(const MemMaps &right);
 
 			void			print(void) const;
+			void			refresh(void);
 
 			bool			in_any_range(t_addr address) const;
 			bool			is_readable(t_addr address) const;

@@ -17,7 +17,10 @@
 # include <MemMaps.hpp>
 
 # include <macros.h>
-
+//****forward declatrions
+void	block_signals(void);
+void	unblock_signals(void);
+//*********************************
 typedef enum e_reg_index {
 	R15 = 0,
 	R14,
@@ -58,6 +61,7 @@ class Debugee {
 private:
 		pid_t					_pid;
 		void					_refresh_regs(void);
+		void					_refresh_maps(void);
 		struct user_regs_struct	_regs;
 		bool					_finished;
 		bool					_paused;
@@ -71,6 +75,7 @@ public:
 								Debugee(const Debugee &old);
 		Debugee					&operator=(const Debugee &right);
 								~Debugee(void);
+		bool					is_paused(void) const;
 		pid_t					get_pid(void) const;
 		void					cont(void);
 		void					next_syscall(void);
@@ -87,6 +92,7 @@ public:
 		void					set_reg(t_reg_index idx, unsigned long long val);
 		unsigned long long		get_reg(t_reg_index idx);
 		void					read_data(t_addr address, void *buffer, size_t len);
+		void					print_maps(void) const;
 };
 
 #endif //DEBUGEE_HPP
